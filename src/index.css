@@ -8,133 +8,133 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    /* Futuristic Design System - Star Trek/Wars Inspired */
-    --background: 210 30% 8%;
-    --foreground: 180 100% 90%;
+    /* Visa Payment Design System */
+    --background: 0 0% 100%;
+    --foreground: 228 39% 23%;
 
-    --card: 210 25% 12%;
-    --card-foreground: 180 100% 90%;
+    --card: 0 0% 100%;
+    --card-foreground: 228 39% 23%;
 
-    --popover: 210 25% 10%;
-    --popover-foreground: 180 100% 90%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 228 39% 23%;
 
-    /* Primary: Cyan Blue - Star Trek LCARS inspired */
-    --primary: 190 100% 50%;
-    --primary-foreground: 210 30% 8%;
-    --primary-glow: 190 100% 70%;
+    /* Primary: Visa Blue */
+    --primary: 228 39% 23%;
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 228 39% 33%;
 
-    /* Secondary: Dark panels with subtle blue tint */
-    --secondary: 210 20% 18%;
-    --secondary-foreground: 180 100% 90%;
+    /* Secondary: Visa Gold */
+    --secondary: 45 94% 47%;
+    --secondary-foreground: 228 39% 23%;
 
-    --muted: 210 15% 15%;
-    --muted-foreground: 180 50% 70%;
+    --muted: 210 40% 98%;
+    --muted-foreground: 215 16% 47%;
 
-    /* Accent: Orange - Star Wars/Trek warning color */
-    --accent: 25 100% 55%;
-    --accent-foreground: 210 30% 8%;
+    /* Accent: Professional Blue */
+    --accent: 217 91% 60%;
+    --accent-foreground: 0 0% 100%;
 
-    /* Status Colors - Futuristic palette */
-    --success: 140 100% 40%;
-    --success-foreground: 210 30% 8%;
-    --warning: 45 100% 50%;
-    --warning-foreground: 210 30% 8%;
-    --destructive: 0 100% 60%;
-    --destructive-foreground: 180 100% 90%;
+    /* Status Colors - Professional palette */
+    --success: 142 76% 36%;
+    --success-foreground: 0 0% 100%;
+    --warning: 43 96% 56%;
+    --warning-foreground: 228 39% 23%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 210 20% 20%;
-    --input: 210 20% 15%;
-    --ring: 190 100% 50%;
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 228 39% 23%;
 
-    /* Futuristic Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(190 100% 50%), hsl(25 100% 55%));
-    --gradient-subtle: linear-gradient(180deg, hsl(210 30% 8%), hsl(210 25% 12%));
-    --gradient-card: linear-gradient(145deg, hsl(210 25% 12%), hsl(210 20% 15%));
-    --gradient-hologram: linear-gradient(45deg, hsl(190 100% 50% / 0.1), hsl(25 100% 55% / 0.1));
+    /* Professional Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(228 39% 23%), hsl(217 91% 60%));
+    --gradient-subtle: linear-gradient(180deg, hsl(0 0% 100%), hsl(210 40% 98%));
+    --gradient-card: linear-gradient(145deg, hsl(0 0% 100%), hsl(210 40% 99%));
+    --gradient-hologram: linear-gradient(45deg, hsl(228 39% 23% / 0.05), hsl(45 94% 47% / 0.05));
 
-    /* Sci-Fi Shadows with Glow Effects */
-    --shadow-sm: 0 1px 3px 0 hsl(190 100% 50% / 0.1);
-    --shadow-md: 0 4px 12px -2px hsl(190 100% 50% / 0.15), 0 2px 8px -2px hsl(210 30% 8% / 0.8);
-    --shadow-lg: 0 10px 25px -5px hsl(190 100% 50% / 0.2), 0 4px 16px -4px hsl(210 30% 8% / 0.9);
-    --shadow-primary: 0 0 30px hsl(190 100% 50% / 0.3), 0 0 60px hsl(190 100% 50% / 0.1);
-    --shadow-accent: 0 0 20px hsl(25 100% 55% / 0.4);
+    /* Professional Shadows */
+    --shadow-sm: 0 1px 2px 0 hsl(0 0% 0% / 0.05);
+    --shadow-md: 0 4px 6px -1px hsl(0 0% 0% / 0.1), 0 2px 4px -1px hsl(0 0% 0% / 0.06);
+    --shadow-lg: 0 10px 15px -3px hsl(0 0% 0% / 0.1), 0 4px 6px -2px hsl(0 0% 0% / 0.05);
+    --shadow-primary: 0 4px 14px 0 hsl(228 39% 23% / 0.15);
+    --shadow-accent: 0 4px 14px 0 hsl(217 91% 60% / 0.25);
 
-    /* Advanced Animations */
-    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    --transition-bounce: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-    --transition-glow: all 0.2s ease-in-out;
+    /* Smooth Animations */
+    --transition-smooth: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-bounce: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    --transition-glow: all 0.15s ease-in-out;
 
-    --radius: 0.75rem;
+    --radius: 0.5rem;
 
-    --sidebar-background: 210 25% 10%;
-    --sidebar-foreground: 180 100% 90%;
-    --sidebar-primary: 190 100% 50%;
-    --sidebar-primary-foreground: 210 30% 8%;
-    --sidebar-accent: 210 20% 18%;
-    --sidebar-accent-foreground: 180 100% 90%;
-    --sidebar-border: 210 20% 20%;
-    --sidebar-ring: 190 100% 50%;
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 228 39% 23%;
+    --sidebar-primary: 228 39% 23%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 210 40% 98%;
+    --sidebar-accent-foreground: 228 39% 23%;
+    --sidebar-border: 214 32% 91%;
+    --sidebar-ring: 228 39% 23%;
   }
 
   .dark {
-    /* Enhanced Futuristic Dark Mode - Even Darker */
-    --background: 210 40% 3%;
-    --foreground: 180 100% 95%;
+    /* Visa Professional Dark Mode */
+    --background: 222 47% 11%;
+    --foreground: 213 31% 91%;
 
-    --card: 210 35% 6%;
-    --card-foreground: 180 100% 95%;
+    --card: 222 47% 11%;
+    --card-foreground: 213 31% 91%;
 
-    --popover: 210 35% 5%;
-    --popover-foreground: 180 100% 95%;
+    --popover: 222 47% 11%;
+    --popover-foreground: 213 31% 91%;
 
-    /* Primary: Brighter cyan for dark mode */
-    --primary: 190 100% 60%;
-    --primary-foreground: 210 40% 3%;
-    --primary-glow: 190 100% 80%;
+    /* Primary: Visa Blue - darker variant */
+    --primary: 217 91% 60%;
+    --primary-foreground: 222 47% 11%;
+    --primary-glow: 217 91% 70%;
 
-    --secondary: 210 25% 12%;
-    --secondary-foreground: 180 100% 90%;
+    --secondary: 45 94% 47%;
+    --secondary-foreground: 222 47% 11%;
 
-    --muted: 210 20% 10%;
-    --muted-foreground: 180 40% 75%;
+    --muted: 217 32% 17%;
+    --muted-foreground: 215 20% 65%;
 
-    /* Accent: Brighter orange for visibility */
-    --accent: 25 100% 65%;
-    --accent-foreground: 210 40% 3%;
+    /* Accent: Bright professional blue */
+    --accent: 217 91% 60%;
+    --accent-foreground: 222 47% 11%;
 
     /* Status Colors - Enhanced for dark mode */
-    --success: 140 100% 45%;
-    --success-foreground: 210 40% 3%;
-    --warning: 45 100% 60%;
-    --warning-foreground: 210 40% 3%;
-    --destructive: 0 100% 65%;
-    --destructive-foreground: 180 100% 95%;
+    --success: 142 76% 36%;
+    --success-foreground: 213 31% 91%;
+    --warning: 43 96% 56%;
+    --warning-foreground: 222 47% 11%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 213 31% 91%;
 
-    --border: 210 25% 15%;
-    --input: 210 25% 10%;
-    --ring: 190 100% 60%;
+    --border: 217 32% 22%;
+    --input: 217 32% 17%;
+    --ring: 217 91% 60%;
 
-    /* Enhanced Dark Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(190 100% 60%), hsl(25 100% 65%));
-    --gradient-subtle: linear-gradient(180deg, hsl(210 40% 3%), hsl(210 35% 6%));
-    --gradient-card: linear-gradient(145deg, hsl(210 35% 6%), hsl(210 25% 8%));
-    --gradient-hologram: linear-gradient(45deg, hsl(190 100% 60% / 0.15), hsl(25 100% 65% / 0.15));
+    /* Professional Dark Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(217 91% 60%), hsl(228 39% 23%));
+    --gradient-subtle: linear-gradient(180deg, hsl(222 47% 11%), hsl(217 32% 17%));
+    --gradient-card: linear-gradient(145deg, hsl(222 47% 11%), hsl(217 32% 14%));
+    --gradient-hologram: linear-gradient(45deg, hsl(217 91% 60% / 0.1), hsl(45 94% 47% / 0.1));
 
-    /* Enhanced Glow Effects for Dark Mode */
-    --shadow-sm: 0 1px 3px 0 hsl(190 100% 60% / 0.15);
-    --shadow-md: 0 4px 12px -2px hsl(190 100% 60% / 0.2), 0 2px 8px -2px hsl(210 40% 3% / 0.9);
-    --shadow-lg: 0 10px 25px -5px hsl(190 100% 60% / 0.25), 0 4px 16px -4px hsl(210 40% 3% / 0.95);
-    --shadow-primary: 0 0 40px hsl(190 100% 60% / 0.4), 0 0 80px hsl(190 100% 60% / 0.15);
-    --shadow-accent: 0 0 25px hsl(25 100% 65% / 0.5);
+    /* Professional Dark Shadows */
+    --shadow-sm: 0 1px 2px 0 hsl(0 0% 0% / 0.2);
+    --shadow-md: 0 4px 6px -1px hsl(0 0% 0% / 0.3), 0 2px 4px -1px hsl(0 0% 0% / 0.2);
+    --shadow-lg: 0 10px 15px -3px hsl(0 0% 0% / 0.3), 0 4px 6px -2px hsl(0 0% 0% / 0.2);
+    --shadow-primary: 0 4px 14px 0 hsl(217 91% 60% / 0.25);
+    --shadow-accent: 0 4px 14px 0 hsl(217 91% 60% / 0.35);
 
-    --sidebar-background: 210 35% 4%;
-    --sidebar-foreground: 180 100% 90%;
-    --sidebar-primary: 190 100% 60%;
-    --sidebar-primary-foreground: 210 40% 3%;
-    --sidebar-accent: 210 25% 12%;
-    --sidebar-accent-foreground: 180 100% 90%;
-    --sidebar-border: 210 25% 15%;
-    --sidebar-ring: 190 100% 60%;
+    --sidebar-background: 217 32% 14%;
+    --sidebar-foreground: 213 31% 91%;
+    --sidebar-primary: 217 91% 60%;
+    --sidebar-primary-foreground: 222 47% 11%;
+    --sidebar-accent: 217 32% 17%;
+    --sidebar-accent-foreground: 213 31% 91%;
+    --sidebar-border: 217 32% 22%;
+    --sidebar-ring: 217 91% 60%;
   }
 }
 

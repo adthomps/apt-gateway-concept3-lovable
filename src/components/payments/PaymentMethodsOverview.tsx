@@ -23,8 +23,8 @@ const paymentMethodStats = [
     avgAmount: "$274.12",
     change: "+12.5%",
     changeType: "positive" as const,
-    color: "text-blue-600",
-    bgColor: "bg-blue-50"
+    color: "text-primary",
+    bgColor: "bg-primary/10"
   },
   {
     method: "ACH Transfers",
@@ -35,8 +35,8 @@ const paymentMethodStats = [
     avgAmount: "$807.54",
     change: "+8.3%",
     changeType: "positive" as const,
-    color: "text-green-600",
-    bgColor: "bg-green-50"
+    color: "text-success",
+    bgColor: "bg-success/10"
   },
   {
     method: "Stablecoin",
@@ -47,17 +47,17 @@ const paymentMethodStats = [
     avgAmount: "$609.70",
     change: "+45.2%",
     changeType: "positive" as const,
-    color: "text-purple-600",
-    bgColor: "bg-purple-50"
+    color: "text-accent",
+    bgColor: "bg-accent/10"
   }
 ];
 
 const methodBreakdown = [
-  { method: "Visa", percentage: 42, volume: "$1,029,374", color: "bg-blue-500" },
-  { method: "Mastercard", percentage: 28, volume: "$686,249", color: "bg-red-500" },
-  { method: "American Express", percentage: 15, volume: "$367,883", color: "bg-green-500" },
-  { method: "ACH", percentage: 12, volume: "$294,234", color: "bg-purple-500" },
-  { method: "Stablecoin", percentage: 3, volume: "$73,567", color: "bg-orange-500" }
+  { method: "Visa", percentage: 42, volume: "$1,029,374", color: "bg-primary" },
+  { method: "Mastercard", percentage: 28, volume: "$686,249", color: "bg-destructive" },
+  { method: "American Express", percentage: 15, volume: "$367,883", color: "bg-success" },
+  { method: "ACH", percentage: 12, volume: "$294,234", color: "bg-accent" },
+  { method: "Stablecoin", percentage: 3, volume: "$73,567", color: "bg-secondary" }
 ];
 
 export function PaymentMethodsOverview() {
@@ -74,8 +74,8 @@ export function PaymentMethodsOverview() {
         </Button>
       </div>
 
-      {/* Payment Method Stats */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* Payment Method Stats - Mobile First Responsive */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
         {paymentMethodStats.map((stat, index) => {
           const Icon = stat.icon;
           return (
@@ -97,14 +97,14 @@ export function PaymentMethodsOverview() {
                 <CardTitle className="text-lg">{stat.method}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <div>
                     <p className="text-sm text-muted-foreground">Volume</p>
-                    <p className="text-xl font-bold">{stat.volume}</p>
+                    <p className="text-lg sm:text-xl font-bold">{stat.volume}</p>
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">Transactions</p>
-                    <p className="text-xl font-bold">{stat.transactions.toLocaleString()}</p>
+                    <p className="text-lg sm:text-xl font-bold">{stat.transactions.toLocaleString()}</p>
                   </div>
                 </div>
                 <div>
@@ -124,8 +124,8 @@ export function PaymentMethodsOverview() {
         })}
       </div>
 
-      {/* Payment Method Breakdown */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+      {/* Payment Method Breakdown - Mobile Responsive */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
         <Card className="bg-gradient-card shadow-md">
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
@@ -159,21 +159,21 @@ export function PaymentMethodsOverview() {
             <CardDescription>Key metrics across payment methods</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              <div className="grid grid-cols-3 gap-4 text-center">
-                <div className="p-3 bg-muted/30 rounded-lg">
-                  <p className="text-2xl font-bold text-success">97.2%</p>
-                  <p className="text-xs text-muted-foreground">Overall Success</p>
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 text-center">
+                  <div className="p-3 bg-muted/30 rounded-lg">
+                    <p className="text-xl sm:text-2xl font-bold text-success">97.2%</p>
+                    <p className="text-xs text-muted-foreground">Overall Success</p>
+                  </div>
+                  <div className="p-3 bg-muted/30 rounded-lg">
+                    <p className="text-xl sm:text-2xl font-bold text-primary">2.3s</p>
+                    <p className="text-xs text-muted-foreground">Avg Processing</p>
+                  </div>
+                  <div className="p-3 bg-muted/30 rounded-lg">
+                    <p className="text-xl sm:text-2xl font-bold text-accent">$487</p>
+                    <p className="text-xs text-muted-foreground">Avg Transaction</p>
+                  </div>
                 </div>
-                <div className="p-3 bg-muted/30 rounded-lg">
-                  <p className="text-2xl font-bold text-primary">2.3s</p>
-                  <p className="text-xs text-muted-foreground">Avg Processing</p>
-                </div>
-                <div className="p-3 bg-muted/30 rounded-lg">
-                  <p className="text-2xl font-bold text-accent">$487</p>
-                  <p className="text-xs text-muted-foreground">Avg Transaction</p>
-                </div>
-              </div>
               
               <div className="space-y-3">
                 <div className="flex items-center justify-between p-3 bg-success/10 rounded-lg">

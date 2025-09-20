@@ -185,11 +185,11 @@ export function RiskManagement() {
 
       {/* Main Content */}
       <Tabs defaultValue="transactions" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="transactions">Flagged Transactions</TabsTrigger>
-          <TabsTrigger value="rules">Risk Rules</TabsTrigger>
-          <TabsTrigger value="alerts">Active Alerts</TabsTrigger>
-          <TabsTrigger value="reports">Reports</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-2 md:grid-cols-4">
+          <TabsTrigger value="transactions" className="text-xs sm:text-sm">Transactions</TabsTrigger>
+          <TabsTrigger value="rules" className="text-xs sm:text-sm">Rules</TabsTrigger>
+          <TabsTrigger value="alerts" className="text-xs sm:text-sm">Alerts</TabsTrigger>
+          <TabsTrigger value="reports" className="text-xs sm:text-sm">Reports</TabsTrigger>
         </TabsList>
 
         {/* Flagged Transactions Tab */}
@@ -309,7 +309,7 @@ export function RiskManagement() {
 
         {/* Risk Rules Tab */}
         <TabsContent value="rules" className="space-y-4">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
             <Card className="bg-gradient-card shadow-md">
               <CardHeader>
                 <CardTitle className="text-lg font-semibold">Velocity Rules</CardTitle>
@@ -390,7 +390,7 @@ export function RiskManagement() {
 
         {/* Reports Tab */}
         <TabsContent value="reports" className="space-y-4">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
             <Card className="bg-gradient-card shadow-md">
               <CardHeader>
                 <CardTitle className="text-lg font-semibold">Risk Trends</CardTitle>
