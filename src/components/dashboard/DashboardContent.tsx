@@ -22,8 +22,10 @@ import {
   Filter
 } from "lucide-react";
 
+import { UserRole } from "@/types/auth";
+
 interface DashboardContentProps {
-  userRole?: "admin" | "operator" | "viewer" | "limited";
+  userRole?: UserRole;
 }
 
 export function DashboardContent({ userRole = "admin" }: DashboardContentProps) {
@@ -33,7 +35,7 @@ export function DashboardContent({ userRole = "admin" }: DashboardContentProps) 
   });
 
   // Show limited dashboard for restricted users
-  if (userRole !== "admin") {
+  if (userRole !== "owner" && userRole !== "admin") {
     return <LimitedDashboard userRole={userRole} />;
   }
   const metrics = [

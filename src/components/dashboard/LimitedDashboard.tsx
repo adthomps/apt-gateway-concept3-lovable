@@ -15,65 +15,33 @@ import {
   Lock
 } from "lucide-react";
 
+import { UserRole } from "@/types/auth";
+
 interface LimitedDashboardProps {
-  userRole: "viewer" | "operator" | "limited";
+  userRole: UserRole;
 }
 
 export function LimitedDashboard({ userRole }: LimitedDashboardProps) {
   const getAccessLevelContent = () => {
     switch (userRole) {
-      case "viewer":
+      case "transaction-manager":
         return {
-          title: "Dashboard Overview",
-          description: "Limited view - Contact your administrator for full access",
-          allowedMetrics: [
-            { title: "Transaction Status", value: "Operational", icon: CheckCircle, color: "text-green-600" },
-            { title: "System Health", value: "All Systems Go", icon: Shield, color: "text-green-600" },
-          ],
-          features: [
-            { name: "Transaction Status", available: true },
-            { name: "System Health", available: true },
-            { name: "Basic Alerts", available: true },
-            { name: "Detailed Reports", available: false },
-            { name: "Search Functions", available: false },
-            { name: "Settings Access", available: false },
-          ]
-        };
-      
-      case "operator":
-        return {
-          title: "Operator Dashboard",
-          description: "Operational monitoring - Limited reporting access",
+          title: "Transaction Manager Dashboard",
+          description: "Transaction and customer management access",
           allowedMetrics: [
             { title: "Active Transactions", value: "2,847", icon: CreditCard, color: "text-primary" },
             { title: "System Status", value: "Healthy", icon: CheckCircle, color: "text-green-600" },
             { title: "Pending Reviews", value: "23", icon: Clock, color: "text-yellow-600" },
-            { title: "Alerts", value: "2 Active", icon: AlertTriangle, color: "text-red-600" },
+            { title: "Total Customers", value: "1,293", icon: Users, color: "text-primary" },
           ],
           features: [
-            { name: "Transaction Monitoring", available: true },
+            { name: "Transaction Management", available: true },
+            { name: "Customer Management", available: true },
             { name: "Basic Search", available: true },
-            { name: "Alert Management", available: true },
-            { name: "Customer Support", available: true },
-            { name: "Financial Reports", available: false },
+            { name: "Payment Infrastructure View", available: true },
+            { name: "Routing Engine View", available: true },
+            { name: "User Management", available: false },
             { name: "System Settings", available: false },
-          ]
-        };
-      
-      case "limited":
-        return {
-          title: "Limited Access",
-          description: "Restricted access - Contact your administrator to upgrade permissions",
-          allowedMetrics: [
-            { title: "Account Status", value: "Active", icon: Shield, color: "text-green-600" },
-          ],
-          features: [
-            { name: "Account Status", available: true },
-            { name: "Basic Notifications", available: true },
-            { name: "Transaction Data", available: false },
-            { name: "Reports", available: false },
-            { name: "Search", available: false },
-            { name: "Settings", available: false },
           ]
         };
       
@@ -183,22 +151,10 @@ export function LimitedDashboard({ userRole }: LimitedDashboardProps) {
             <div className="pt-4 border-t border-border">
               <h4 className="font-medium text-sm mb-2">Available Upgrades:</h4>
               <ul className="text-xs text-muted-foreground space-y-1">
-                {userRole === "limited" && (
+                {userRole === "transaction-manager" && (
                   <>
-                    <li>• Operator Access - Transaction monitoring</li>
-                    <li>• Full Access - Complete dashboard and reports</li>
-                  </>
-                )}
-                {userRole === "operator" && (
-                  <>
-                    <li>• Admin Access - Full reporting and settings</li>
-                    <li>• Analytics Access - Advanced insights</li>
-                  </>
-                )}
-                {userRole === "viewer" && (
-                  <>
-                    <li>• Operator Access - Basic transaction controls</li>
-                    <li>• Full Access - Complete platform access</li>
+                    <li>• Admin Access - Full reporting and user management</li>
+                    <li>• Owner Access - Complete system control</li>
                   </>
                 )}
               </ul>
@@ -208,7 +164,7 @@ export function LimitedDashboard({ userRole }: LimitedDashboardProps) {
       </div>
 
       {/* Limited Recent Activity */}
-      {userRole === "operator" && (
+      {userRole === "transaction-manager" && (
         <Card className="bg-gradient-card shadow-md">
           <CardHeader>
             <CardTitle className="text-lg flex items-center space-x-2">

@@ -1,6 +1,11 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Badge } from "@/components/ui/badge";
+import { useAuth } from "@/contexts/AuthContext";
+import { usePermissions } from "@/hooks/usePermissions";
 import { 
   BarChart3, 
   CreditCard, 
@@ -13,7 +18,9 @@ import {
   X,
   Globe,
   User,
-  UserCog
+  UserCog,
+  LogOut,
+  Shield
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -39,6 +46,13 @@ const navigationItems = [
 
 export function DashboardHeader({ onToggleAI, activeSection, onSectionChange }: DashboardHeaderProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { user, logout } = useAuth();
+  const { getNavSections } = usePermissions();
+  
+  const allowedSections = getNavSections();
+  const visibleNavItems = navigationItems.filter(item => 
+    allowedSections.some(section => section.id === item.id)
+  );
 
   return (
     <div className="sticky top-0 z-50 bg-gradient-subtle border-b border-border backdrop-blur-sm">
@@ -59,7 +73,7 @@ export function DashboardHeader({ onToggleAI, activeSection, onSectionChange }: 
 
           {/* Desktop Navigation */}
           <nav className="hidden lg:flex items-center space-x-1">
-            {navigationItems.map((item) => {
+            {visibleNavItems.map((item) => {
               const Icon = item.icon;
               return (
                 <Button
@@ -89,6 +103,48 @@ export function DashboardHeader({ onToggleAI, activeSection, onSectionChange }: 
               <span className="hidden sm:inline">AI Assistant</span>
             </Button>
 
+            {/* User Menu */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src={user?.avatar} alt={user?.name} />
+                    <AvatarFallback className="bg-primary text-primary-foreground text-xs">
+                      {user?.name?.split(' ').map(n => n[0]).join('') || 'U'}
+                    </AvatarFallback>
+                  </Avatar>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56" align="end" forceMount>
+                <DropdownMenuLabel className="font-normal">
+                  <div className="flex flex-col space-y-1">
+                    <p className="text-sm font-medium leading-none">{user?.name}</p>
+                    <p className="text-xs leading-none text-muted-foreground">{user?.email}</p>
+                    <div className="flex items-center pt-1">
+                      <Badge variant="secondary" className="text-xs capitalize">
+                        <Shield className="w-3 h-3 mr-1" />
+                        {user?.role?.replace('-', ' ')}
+                      </Badge>
+                    </div>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => onSectionChange('user-profile')}>
+                  <User className="mr-2 h-4 w-4" />
+                  <span>Profile</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onSectionChange('account-settings')}>
+                  <Settings className="mr-2 h-4 w-4" />
+                  <span>Settings</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={logout} className="text-destructive focus:text-destructive">
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Log out</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
             {/* Mobile Menu Toggle */}
             <Button
               variant="ghost"
@@ -105,7 +161,7 @@ export function DashboardHeader({ onToggleAI, activeSection, onSectionChange }: 
         {isMobileMenuOpen && (
           <div className="lg:hidden py-4 border-t border-border">
             <nav className="grid grid-cols-2 gap-2">
-              {navigationItems.map((item) => {
+              {visibleNavItems.map((item) => {
                 const Icon = item.icon;
                 return (
                   <Button

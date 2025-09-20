@@ -12,40 +12,84 @@ import { OrchestrationAnalytics } from "@/components/analytics/OrchestrationAnal
 import { AccountSettings } from "@/components/sections/AccountSettings";
 import { UserProfile } from "@/components/sections/UserProfile";
 import { UserManagement } from "@/components/sections/UserManagement";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { usePermissions } from "@/hooks/usePermissions";
 
 const Index = () => {
   const [activeSection, setActiveSection] = useState("dashboard");
   const [isAIOpen, setIsAIOpen] = useState(false);
-  
-  // Simulate user role - in real app this would come from auth/context
-  const [userRole] = useState<"admin" | "operator" | "viewer" | "limited">("admin");
+  const { user } = usePermissions();
 
   const renderContent = () => {
     switch (activeSection) {
       case "dashboard":
-        return <DashboardContent userRole={userRole} />;
+        return (
+          <ProtectedRoute requiredPermission="dashboard:view">
+            <DashboardContent userRole={user?.role || 'transaction-manager'} />
+          </ProtectedRoute>
+        );
       case "transactions":
-        return <TransactionsSection />;
+        return (
+          <ProtectedRoute requiredPermission="transactions:view">
+            <TransactionsSection />
+          </ProtectedRoute>
+        );
       case "customers":
-        return <CustomersSection />;
+        return (
+          <ProtectedRoute requiredPermission="customers:view">
+            <CustomersSection />
+          </ProtectedRoute>
+        );
       case "links":
-        return <LinksSection />;
+        return (
+          <ProtectedRoute requiredPermission="links:view">
+            <LinksSection />
+          </ProtectedRoute>
+        );
       case "search":
-        return <SearchSection />;
+        return (
+          <ProtectedRoute requiredPermission="search:access">
+            <SearchSection />
+          </ProtectedRoute>
+        );
       case "payment-infrastructure":
-        return <PaymentInfrastructure />;
+        return (
+          <ProtectedRoute requiredPermission="payment-infrastructure:view">
+            <PaymentInfrastructure />
+          </ProtectedRoute>
+        );
       case "routing-engine":
-        return <GlobalRoutingEngine />;
+        return (
+          <ProtectedRoute requiredPermission="routing-engine:view">
+            <GlobalRoutingEngine />
+          </ProtectedRoute>
+        );
       case "analytics":
-        return <OrchestrationAnalytics />;
+        return (
+          <ProtectedRoute requiredPermission="analytics:view">
+            <OrchestrationAnalytics />
+          </ProtectedRoute>
+        );
       case "user-profile":
         return <UserProfile />;
       case "user-management":
-        return <UserManagement />;
+        return (
+          <ProtectedRoute requiredPermission="user-management:view">
+            <UserManagement />
+          </ProtectedRoute>
+        );
       case "account-settings":
-        return <AccountSettings />;
+        return (
+          <ProtectedRoute requiredPermission="account-settings:view">
+            <AccountSettings />
+          </ProtectedRoute>
+        );
       default:
-        return <DashboardContent userRole={userRole} />;
+        return (
+          <ProtectedRoute requiredPermission="dashboard:view">
+            <DashboardContent userRole={user?.role || 'transaction-manager'} />
+          </ProtectedRoute>
+        );
     }
   };
 
