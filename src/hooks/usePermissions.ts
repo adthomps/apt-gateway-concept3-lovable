@@ -37,6 +37,16 @@ export function usePermissions() {
     canViewRoutingEngine: () => hasPermission('routing-engine:view'),
     canManageRoutingEngine: () => hasPermission('routing-engine:manage'),
     
+    // Risk management permissions
+    canViewRiskManagement: () => hasPermission('risk-management:view'),
+    canManageRiskManagement: () => hasPermission('risk-management:manage'),
+    canApproveRiskTransactions: () => hasPermission('risk-management:approve'),
+    canDeclineRiskTransactions: () => hasPermission('risk-management:decline'),
+    
+    // Transaction action permissions
+    canVoidTransactions: () => hasPermission('transactions:void'),
+    canRefundTransactions: () => hasPermission('transactions:refund'),
+    
     // Analytics permissions
     canViewAnalytics: () => hasPermission('analytics:view'),
     canExportAnalytics: () => hasPermission('analytics:export'),
@@ -106,6 +116,10 @@ export function usePermissions() {
     
     if (checkPermissions.canViewRoutingEngine()) {
       sections.push({ id: 'routing-engine', label: 'Routing Engine' });
+    }
+    
+    if (checkPermissions.canViewRiskManagement()) {
+      sections.push({ id: 'risk-management', label: 'Risk Management' });
     }
     
     if (checkPermissions.canViewAnalytics()) {

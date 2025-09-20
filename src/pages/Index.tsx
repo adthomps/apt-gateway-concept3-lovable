@@ -11,6 +11,7 @@ import { GlobalRoutingEngine } from "@/components/sections/GlobalRoutingEngine";
 import { OrchestrationAnalytics } from "@/components/analytics/OrchestrationAnalytics";
 import { AccountSettings } from "@/components/sections/AccountSettings";
 import { UserProfile } from "@/components/sections/UserProfile";
+import { RiskManagement } from "@/components/sections/RiskManagement";
 import { UserManagement } from "@/components/sections/UserManagement";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { usePermissions } from "@/hooks/usePermissions";
@@ -62,6 +63,12 @@ const Index = () => {
         return (
           <ProtectedRoute requiredPermission="routing-engine:view">
             <GlobalRoutingEngine />
+          </ProtectedRoute>
+        );
+      case "risk-management":
+        return (
+          <ProtectedRoute requiredPermission="risk-management:view">
+            <RiskManagement />
           </ProtectedRoute>
         );
       case "analytics":

@@ -8,6 +8,8 @@ export type Permission =
   | 'transactions:create'
   | 'transactions:edit'
   | 'transactions:delete'
+  | 'transactions:void'
+  | 'transactions:refund'
   | 'customers:view'
   | 'customers:create'
   | 'customers:edit'
@@ -21,6 +23,10 @@ export type Permission =
   | 'payment-infrastructure:manage'
   | 'routing-engine:view'
   | 'routing-engine:manage'
+  | 'risk-management:view'
+  | 'risk-management:manage'
+  | 'risk-management:approve'
+  | 'risk-management:decline'
   | 'analytics:view'
   | 'analytics:export'
   | 'user-management:view'
@@ -58,12 +64,13 @@ export interface AuthContextType {
 export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
   owner: [
     'dashboard:view',
-    'transactions:view', 'transactions:create', 'transactions:edit', 'transactions:delete',
+    'transactions:view', 'transactions:create', 'transactions:edit', 'transactions:delete', 'transactions:void', 'transactions:refund',
     'customers:view', 'customers:create', 'customers:edit', 'customers:delete',
     'links:view', 'links:create', 'links:edit', 'links:delete',
     'search:access',
     'payment-infrastructure:view', 'payment-infrastructure:manage',
     'routing-engine:view', 'routing-engine:manage',
+    'risk-management:view', 'risk-management:manage', 'risk-management:approve', 'risk-management:decline',
     'analytics:view', 'analytics:export',
     'user-management:view', 'user-management:create', 'user-management:edit', 'user-management:delete',
     'account-settings:view', 'account-settings:edit',
@@ -71,24 +78,26 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
   ],
   admin: [
     'dashboard:view',
-    'transactions:view', 'transactions:create', 'transactions:edit', 'transactions:delete',
+    'transactions:view', 'transactions:create', 'transactions:edit', 'transactions:delete', 'transactions:void', 'transactions:refund',
     'customers:view', 'customers:create', 'customers:edit', 'customers:delete',
     'links:view', 'links:create', 'links:edit', 'links:delete',
     'search:access',
     'payment-infrastructure:view', 'payment-infrastructure:manage',
     'routing-engine:view', 'routing-engine:manage',
+    'risk-management:view', 'risk-management:manage', 'risk-management:approve', 'risk-management:decline',
     'analytics:view', 'analytics:export',
     'user-management:view', 'user-management:create', 'user-management:edit',
     'account-settings:view', 'account-settings:edit'
   ],
   'transaction-manager': [
     'dashboard:view',
-    'transactions:view', 'transactions:create', 'transactions:edit',
+    'transactions:view', 'transactions:create', 'transactions:edit', 'transactions:void',
     'customers:view', 'customers:edit',
     'links:view',
     'search:access',
     'payment-infrastructure:view',
     'routing-engine:view',
+    'risk-management:view',
     'analytics:view',
     'account-settings:view'
   ]

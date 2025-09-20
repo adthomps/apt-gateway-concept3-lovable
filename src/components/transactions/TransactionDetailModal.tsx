@@ -58,12 +58,12 @@ interface Transaction {
 }
 
 interface TransactionDetailModalProps {
-  transaction: Transaction | null;
-  isOpen: boolean;
-  onClose: () => void;
+  transaction: any;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }
 
-export function TransactionDetailModal({ transaction, isOpen, onClose }: TransactionDetailModalProps) {
+export function TransactionDetailModal({ transaction, open, onOpenChange }: TransactionDetailModalProps) {
   if (!transaction) return null;
 
   const getStatusIcon = (status: string) => {
@@ -84,7 +84,7 @@ export function TransactionDetailModal({ transaction, isOpen, onClose }: Transac
   const riskInfo = getRiskLevel(transaction.fraudScore);
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center space-x-2">

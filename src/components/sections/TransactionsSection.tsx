@@ -1,155 +1,209 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { TransactionDetailModal } from "@/components/transactions/TransactionDetailModal";
-import { useState } from "react";
+import { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { DateRangePicker, DateRange } from '@/components/ui/date-range-picker';
+import { TransactionDetailModal } from '@/components/transactions/TransactionDetailModal';
+import { subDays } from 'date-fns';
 import { 
   CreditCard, 
-  Search, 
-  Filter, 
-  Download,
-  Eye,
-  RefreshCw,
-  Calendar,
-  DollarSign,
-  ArrowRight,
-  AlertTriangle,
+  Download, 
+  RefreshCw, 
+  Eye, 
+  Filter,
   CheckCircle,
+  XCircle,
   Clock,
+  AlertTriangle,
   RotateCcw,
-  TrendingUp
-} from "lucide-react";
+  DollarSign
+} from 'lucide-react';
+
+interface Transaction {
+  id: string;
+  date: string;
+  customer: string;
+  email?: string;
+  amount: string;
+  status: 'settled' | 'pending' | 'failed' | 'refunded' | 'void' | 'chargeback' | 'risk_hold';
+  paymentMethod: string;
+  type?: string;
+  method?: string;
+  riskScore?: number;
+  fraudScore?: number;
+  location: string;
+  routingPath: string[];
+}
 
 export function TransactionsSection() {
-  const [selectedTransaction, setSelectedTransaction] = useState(null);
-  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
-  const transactions = [
-    { 
-      id: "40000123456",
-      date: "2024-01-20 14:32", 
-      customer: "John Smith", 
-      email: "john@example.com",
-      amount: "$245.00", 
-      status: "settled",
-      type: "Credit Card",
-      method: "Visa ****1234",
-      routingPath: [
-        { account: "Primary USD", status: "success", processingTime: "1.2s", merchantId: "AUTH001", gatewayResponse: "Approved" }
-      ],
-      billingAddress: {
-        street: "123 Main St",
-        city: "New York",
-        state: "NY",
-        zip: "10001",
-        country: "USA"
-      },
-      ipAddress: "192.168.1.100",
-      deviceFingerprint: "d4f5e6g7h8i9j0k1l2m3n4o5p6q7r8s9",
-      riskFactors: ["New device detected"],
-      totalProcessingTime: "1.2s",
-      fees: {
-        processing: "$7.35",
-        interchange: "$2.45",
-        total: "$9.80"
-      },
+  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
+  const [showModal, setShowModal] = useState(false);
+  const [dateRange, setDateRange] = useState<DateRange>({
+    from: subDays(new Date(), 6),
+    to: new Date()
+  });
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const transactions: Transaction[] = [
+    {
+      id: 'TXN-001',
+      date: '2024-03-15 14:32:00',
+      customer: 'John Doe',
+      email: 'john@example.com',
+      amount: '$245.00',
+      status: 'settled',
+      paymentMethod: 'Visa ****4532',
+      type: 'Credit Card',
+      method: 'Visa ****4532',
       fraudScore: 12,
-      declineReason: null
+      location: 'New York, NY',
+      routingPath: ['Stripe', 'Chase Bank']
     },
-    { 
-      id: "40000123457",
-      date: "2024-01-20 13:15", 
-      customer: "Sarah Johnson", 
-      email: "sarah@company.com",
-      amount: "$1,299.99", 
-      status: "pending",
-      type: "ACH",
-      method: "Bank ****5678",
-      routingPath: [
-        { account: "Primary USD", status: "processing", processingTime: "0.8s", merchantId: "AUTH001" }
-      ],
-      billingAddress: {
-        street: "456 Business Ave",
-        city: "Los Angeles",
-        state: "CA",
-        zip: "90210",
-        country: "USA"
-      },
-      ipAddress: "10.0.0.50",
-      totalProcessingTime: "0.8s",
-      fees: {
-        processing: "$38.99",
-        interchange: "$12.99",
-        total: "$51.98"
-      },
+    {
+      id: 'TXN-002',
+      date: '2024-03-15 14:28:00',
+      customer: 'Jane Smith',
+      email: 'jane@example.com',
+      amount: '$89.99',
+      status: 'pending',
+      paymentMethod: 'Mastercard ****8765',
+      type: 'Credit Card',
+      method: 'Mastercard ****8765',
       fraudScore: 8,
-      declineReason: null
+      location: 'Los Angeles, CA',
+      routingPath: ['Square', 'Wells Fargo']
     },
-    { 
-      id: "40000123458",
-      date: "2024-01-20 12:08", 
-      customer: "Mike Wilson", 
-      email: "mike.w@email.com",
-      amount: "$89.50", 
-      status: "failed",
-      type: "Credit Card",
-      method: "MC ****9012",
-      routingPath: [
-        { account: "Primary USD", status: "declined", processingTime: "0.9s", reason: "Insufficient funds", merchantId: "AUTH001", gatewayResponse: "Declined - NSF" },
-        { account: "Backup Account", status: "declined", processingTime: "1.1s", reason: "Card declined", merchantId: "AUTH002", gatewayResponse: "Declined - Card" }
-      ],
-      billingAddress: {
-        street: "789 Oak St",
-        city: "Chicago",
-        state: "IL",
-        zip: "60601",
-        country: "USA"
-      },
-      ipAddress: "172.16.0.20",
-      riskFactors: ["Multiple recent failures", "High-risk IP"],
-      totalProcessingTime: "2.0s",
+    {
+      id: 'TXN-003',
+      date: '2024-03-15 14:15:00',
+      customer: 'Acme Corp',
+      email: 'billing@acme.com',
+      amount: '$1,250.00',
+      status: 'risk_hold',
+      paymentMethod: 'ACH ****9876',
+      type: 'ACH',
+      method: 'ACH ****9876',
+      riskScore: 85,
+      fraudScore: 85,
+      location: 'Chicago, IL',
+      routingPath: ['PayPal', 'Bank of America']
+    },
+    {
+      id: 'TXN-004',
+      date: '2024-03-15 13:45:00',
+      customer: 'Bob Wilson',
+      email: 'bob@email.com',
+      amount: '$67.50',
+      status: 'failed',
+      paymentMethod: 'Visa ****1234',
+      type: 'Credit Card',
+      method: 'Visa ****1234',
       fraudScore: 23,
-      declineReason: "Card declined by issuer"
+      location: 'Miami, FL',
+      routingPath: ['Stripe', 'Declined']
     },
-    { 
-      id: "40000123459",
-      date: "2024-01-20 11:47", 
-      customer: "Tech Solutions Inc", 
-      email: "billing@techsol.com",
-      amount: "$2,450.00", 
-      status: "settled",
-      type: "Credit Card",
-      method: "Amex ****3456",
-      routingPath: [
-        { account: "High-Risk Backup", status: "success", processingTime: "2.1s" }
-      ],
+    {
+      id: 'TXN-005',
+      date: '2024-03-15 13:22:00',
+      customer: 'Tech Solutions',
+      email: 'payments@techsol.com',
+      amount: '$399.99',
+      status: 'settled',
+      paymentMethod: 'USDC ****abc123',
+      type: 'Stablecoin',
+      method: 'USDC ****abc123',
       fraudScore: 5,
-      declineReason: null
+      location: 'San Francisco, CA',
+      routingPath: ['Circle', 'Coinbase']
     },
-    { 
-      id: "40000123460",
-      date: "2024-01-20 10:22", 
-      customer: "Lisa Chen", 
-      email: "lisa@startup.io",
-      amount: "$67.99", 
-      status: "settled",
-      type: "Credit Card",
-      method: "Visa ****7890",
-      routingPath: [
-        { account: "Primary USD", status: "declined", processingTime: "0.7s", reason: "Daily limit reached" },
-        { account: "Backup Account", status: "success", processingTime: "1.3s" }
-      ],
+    {
+      id: 'TXN-006',
+      date: '2024-03-15 12:55:00',
+      customer: 'Global Industries',
+      email: 'billing@global.com',
+      amount: '$2,800.00',
+      status: 'chargeback',
+      paymentMethod: 'Amex ****5678',
+      type: 'Credit Card',
+      method: 'Amex ****5678',
       fraudScore: 15,
-      declineReason: null
+      location: 'Boston, MA',
+      routingPath: ['Square', 'American Express']
     }
   ];
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'settled':
+        return <Badge variant="default" className="bg-success/20 text-success border-success/30">Settled</Badge>;
+      case 'pending':
+        return <Badge variant="secondary" className="bg-warning/20 text-warning border-warning/30">Pending</Badge>;
+      case 'failed':
+        return <Badge variant="destructive">Failed</Badge>;
+      case 'refunded':
+        return <Badge variant="outline" className="border-primary/30 text-primary">Refunded</Badge>;
+      case 'void':
+        return <Badge variant="outline" className="text-muted-foreground">Void</Badge>;
+      case 'chargeback':
+        return <Badge variant="destructive" className="bg-destructive/20">Chargeback</Badge>;
+      case 'risk_hold':
+        return <Badge variant="secondary" className="bg-warning/20 text-warning border-warning/30">Risk Hold</Badge>;
+      default:
+        return <Badge variant="outline">{status}</Badge>;
+    }
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'settled':
+        return <CheckCircle className="h-4 w-4 text-success" />;
+      case 'pending':
+        return <Clock className="h-4 w-4 text-warning" />;
+      case 'risk_hold':
+        return <AlertTriangle className="h-4 w-4 text-warning" />;
+      case 'failed':
+      case 'chargeback':
+        return <XCircle className="h-4 w-4 text-destructive" />;
+      case 'refunded':
+        return <RotateCcw className="h-4 w-4 text-primary" />;
+      default:
+        return <Clock className="h-4 w-4 text-muted-foreground" />;
+    }
+  };
+
+  const handleViewDetails = (transaction: Transaction) => {
+    setSelectedTransaction(transaction);
+    setShowModal(true);
+  };
+
+  const handleTransactionAction = (transactionId: string, action: 'void' | 'refund' | 'approve' | 'decline') => {
+    console.log(`${action} transaction ${transactionId}`);
+    // Implementation would handle the specific action
+  };
+
+  const canPerformActions = (status: string) => {
+    return ['settled', 'pending', 'risk_hold'].includes(status);
+  };
+
+  const filteredTransactions = transactions.filter(transaction => {
+    const matchesStatus = statusFilter === 'all' || transaction.status === statusFilter;
+    const matchesSearch = transaction.customer.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         transaction.id.toLowerCase().includes(searchTerm.toLowerCase());
+    return matchesStatus && matchesSearch;
+  });
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-4 sm:space-y-0">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Transactions</h1>
+          <h1 className="text-2xl font-bold text-foreground flex items-center space-x-2">
+            <CreditCard className="h-6 w-6 text-primary" />
+            <span>Transactions</span>
+          </h1>
           <p className="text-muted-foreground">View and manage all payment transactions</p>
         </div>
         <div className="flex items-center space-x-2">
@@ -167,190 +221,205 @@ export function TransactionsSection() {
       {/* Filters */}
       <Card className="bg-gradient-card shadow-md">
         <CardHeader>
-          <CardTitle className="text-lg flex items-center space-x-2">
-            <Filter className="h-5 w-5" />
-            <span>Filter Transactions</span>
+          <CardTitle className="text-lg font-semibold flex items-center space-x-2">
+            <Filter className="h-5 w-5 text-primary" />
+            <span>Filters</span>
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Search</label>
-              <div className="relative">
-                <Search className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
-                <Input placeholder="Transaction ID, customer..." className="pl-9" />
-              </div>
+            <div>
+              <label className="text-sm font-medium text-foreground mb-2 block">Search</label>
+              <Input
+                placeholder="Customer name or Transaction ID"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
             </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Date Range</label>
-              <div className="relative">
-                <Calendar className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
-                <Input type="date" className="pl-9" />
-              </div>
+            <div>
+              <label className="text-sm font-medium text-foreground mb-2 block">Date Range</label>
+              <DateRangePicker
+                date={dateRange}
+                onDateChange={setDateRange}
+              />
             </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Amount Range</label>
-              <div className="relative">
-                <DollarSign className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
-                <Input placeholder="Min - Max" className="pl-9" />
-              </div>
+            <div>
+              <label className="text-sm font-medium text-foreground mb-2 block">Status</label>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="All Statuses" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Statuses</SelectItem>
+                  <SelectItem value="settled">Settled</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="risk_hold">Risk Hold</SelectItem>
+                  <SelectItem value="failed">Failed</SelectItem>
+                  <SelectItem value="refunded">Refunded</SelectItem>
+                  <SelectItem value="chargeback">Chargeback</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Status</label>
-              <select className="w-full p-2 border border-input rounded-md bg-background text-foreground">
-                <option value="">All Statuses</option>
-                <option value="settled">Settled</option>
-                <option value="pending">Pending</option>
-                <option value="failed">Failed</option>
-              </select>
+            <div>
+              <label className="text-sm font-medium text-foreground mb-2 block">Amount Range</label>
+              <div className="flex items-center space-x-2">
+                <Input placeholder="Min" className="w-20" />
+                <span className="text-muted-foreground">-</span>
+                <Input placeholder="Max" className="w-20" />
+              </div>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Transactions Table */}
+      {/* Transaction History */}
       <Card className="bg-gradient-card shadow-md">
         <CardHeader>
-          <CardTitle className="text-lg flex items-center space-x-2">
-            <CreditCard className="h-5 w-5" />
+          <CardTitle className="text-lg font-semibold flex items-center space-x-2">
+            <DollarSign className="h-5 w-5 text-primary" />
             <span>Transaction History</span>
-            <Badge variant="secondary" className="ml-2">
-              {transactions.length} results
-            </Badge>
           </CardTitle>
         </CardHeader>
-        <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="border-b border-border bg-muted/30">
-                <tr>
-                  <th className="text-left p-4 font-medium">Transaction ID</th>
-                  <th className="text-left p-4 font-medium">Date & Time</th>
-                  <th className="text-left p-4 font-medium">Customer</th>
-                  <th className="text-left p-4 font-medium">Amount</th>
-                  <th className="text-left p-4 font-medium">Payment Method</th>
-                  <th className="text-left p-4 font-medium">Routing Path</th>
-                  <th className="text-left p-4 font-medium">Status</th>
-                  <th className="text-left p-4 font-medium">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {transactions.map((transaction, index) => (
-                  <tr key={transaction.id} className={index % 2 === 0 ? "bg-background/50" : "bg-muted/10"}>
-                    <td className="p-4">
-                      <div>
-                        <p className="font-medium text-sm">{transaction.id}</p>
-                        <div className="flex items-center space-x-2 mt-1">
-                          <p className="text-xs text-muted-foreground">{transaction.type}</p>
-                          <div className="flex items-center space-x-1">
-                            <div className={`w-2 h-2 rounded-full ${
-                              transaction.fraudScore < 20 ? 'bg-green-500' : 
-                              transaction.fraudScore < 50 ? 'bg-yellow-500' : 'bg-red-500'
-                            }`}></div>
-                            <span className="text-xs text-muted-foreground">
-                              Risk: {transaction.fraudScore}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="p-4">
-                      <p className="text-sm">{transaction.date}</p>
-                    </td>
-                    <td className="p-4">
-                      <div>
-                        <p className="font-medium text-sm">{transaction.customer}</p>
-                        <p className="text-xs text-muted-foreground">{transaction.email}</p>
-                      </div>
-                    </td>
-                    <td className="p-4">
-                      <p className="font-semibold">{transaction.amount}</p>
-                    </td>
-                    <td className="p-4">
-                      <p className="text-sm">{transaction.method}</p>
-                    </td>
-                    <td className="p-4">
-                      <div className="space-y-1">
-                        {transaction.routingPath.map((route, routeIndex) => (
-                          <div key={routeIndex} className="flex items-center space-x-2 text-xs">
-                            <span className="text-muted-foreground">{route.account}</span>
-                            {route.status === "success" && <CheckCircle className="h-3 w-3 text-green-500" />}
-                            {route.status === "declined" && <AlertTriangle className="h-3 w-3 text-red-500" />}
-                            {route.status === "processing" && <Clock className="h-3 w-3 text-blue-500" />}
-                            <span className="text-muted-foreground">({route.processingTime})</span>
-                            {routeIndex < transaction.routingPath.length - 1 && (
-                              <ArrowRight className="h-3 w-3 text-muted-foreground" />
-                            )}
-                          </div>
-                        ))}
-                        {transaction.routingPath.length > 1 && (
-                          <div className="flex items-center space-x-1 mt-1">
-                            <RotateCcw className="h-3 w-3 text-blue-500" />
-                            <span className="text-xs text-blue-600">Auto-retried</span>
-                          </div>
-                        )}
-                      </div>
-                    </td>
-                    <td className="p-4">
-                      <div className="flex items-center space-x-2">
-                        <Badge 
-                          variant={
-                            transaction.status === "settled" ? "default" :
-                            transaction.status === "pending" ? "secondary" : "destructive"
-                          }
-                        >
-                          {transaction.status}
-                        </Badge>
-                        {transaction.routingPath.length > 1 && transaction.status === "settled" && (
-                          <Badge variant="outline" className="text-xs">
-                            <TrendingUp className="h-3 w-3 mr-1" />
-                            Recovered
+        <CardContent>
+          <div className="space-y-3">
+            {filteredTransactions.map((transaction) => (
+              <div key={transaction.id} className="p-4 bg-muted/30 rounded-lg border border-border hover:bg-muted/50 transition-smooth">
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between space-y-4 lg:space-y-0">
+                  <div className="flex-1 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        {getStatusIcon(transaction.status)}
+                        <span className="font-medium text-foreground">{transaction.id}</span>
+                        {getStatusBadge(transaction.status)}
+                        {transaction.riskScore && (
+                          <Badge variant="outline" className="border-warning/30 text-warning">
+                            Risk: {transaction.riskScore}
                           </Badge>
                         )}
                       </div>
-                    </td>
-                    <td className="p-4">
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        onClick={() => {
-                          setSelectedTransaction(transaction);
-                          setIsDetailModalOpen(true);
-                        }}
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                      <span className="text-sm text-muted-foreground">{transaction.date}</span>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 text-sm">
+                      <div>
+                        <span className="text-muted-foreground">Customer:</span>
+                        <p className="font-medium">{transaction.customer}</p>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Amount:</span>
+                        <p className="font-bold text-foreground">{transaction.amount}</p>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Payment Method:</span>
+                        <p className="font-medium">{transaction.paymentMethod}</p>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Location:</span>
+                        <p className="font-medium">{transaction.location}</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center space-x-2 text-xs">
+                      <span className="text-muted-foreground">Routing:</span>
+                      {transaction.routingPath.map((path, index) => (
+                        <span key={index} className="flex items-center">
+                          {index > 0 && <span className="mx-1 text-muted-foreground">→</span>}
+                          <Badge variant="outline" className="text-xs">{path}</Badge>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex items-center space-x-2 lg:ml-4">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleViewDetails(transaction)}
+                    >
+                      <Eye className="h-4 w-4 mr-1" />
+                      Details
+                    </Button>
+                    
+                    {canPerformActions(transaction.status) && (
+                      <>
+                        {transaction.status === 'risk_hold' && (
+                          <>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="border-success text-success hover:bg-success/10"
+                              onClick={() => handleTransactionAction(transaction.id, 'approve')}
+                            >
+                              <CheckCircle className="h-4 w-4 mr-1" />
+                              Approve
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="border-destructive text-destructive hover:bg-destructive/10"
+                              onClick={() => handleTransactionAction(transaction.id, 'decline')}
+                            >
+                              <XCircle className="h-4 w-4 mr-1" />
+                              Decline
+                            </Button>
+                          </>
+                        )}
+                        
+                        {(transaction.status === 'settled' || transaction.status === 'pending') && (
+                          <>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="border-warning text-warning hover:bg-warning/10"
+                              onClick={() => handleTransactionAction(transaction.id, 'void')}
+                            >
+                              <XCircle className="h-4 w-4 mr-1" />
+                              Void
+                            </Button>
+                            {transaction.status === 'settled' && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="border-primary text-primary hover:bg-primary/10"
+                                onClick={() => handleTransactionAction(transaction.id, 'refund')}
+                              >
+                                <RotateCcw className="h-4 w-4 mr-1" />
+                                Refund
+                              </Button>
+                            )}
+                          </>
+                        )}
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
-          
+
           {/* Pagination */}
-          <div className="p-4 border-t border-border flex items-center justify-between">
-            <p className="text-sm text-muted-foreground">
-              Showing 1-{transactions.length} of 2,847 transactions
-            </p>
+          <div className="flex items-center justify-between mt-6 pt-4 border-t border-border">
+            <div className="text-sm text-muted-foreground">
+              Showing {filteredTransactions.length} of {transactions.length} transactions
+            </div>
             <div className="flex items-center space-x-2">
               <Button variant="outline" size="sm" disabled>Previous</Button>
-              <Button variant="outline" size="sm">1</Button>
-              <Button variant="outline" size="sm">2</Button>
-              <Button variant="outline" size="sm">3</Button>
-              <Button variant="outline" size="sm">Next</Button>
+              <span className="text-sm text-muted-foreground">Page 1 of 1</span>
+              <Button variant="outline" size="sm" disabled>Next</Button>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      <TransactionDetailModal
-        transaction={selectedTransaction}
-        isOpen={isDetailModalOpen}
-        onClose={() => {
-          setIsDetailModalOpen(false);
-          setSelectedTransaction(null);
-        }}
-      />
+      {/* Transaction Detail Modal */}
+      {selectedTransaction && (
+        <TransactionDetailModal
+          transaction={selectedTransaction}
+          open={showModal}
+          onOpenChange={setShowModal}
+        />
+      )}
     </div>
   );
 }
