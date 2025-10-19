@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { MetricCard } from "./MetricCard";
+import { AISummaryPanel } from "./AISummaryPanel";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -84,7 +85,7 @@ export function DashboardContent({ userRole = "admin" }: DashboardContentProps) 
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in">
       {/* Header with Date Range Picker */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-4 sm:space-y-0">
         <div>
@@ -102,6 +103,9 @@ export function DashboardContent({ userRole = "admin" }: DashboardContentProps) 
           </Button>
         </div>
       </div>
+
+      {/* AI Summary Panel */}
+      <AISummaryPanel />
       {/* Metrics Grid - Desktop first, responsive */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
         {metrics.map((metric, index) => (

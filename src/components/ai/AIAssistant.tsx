@@ -162,15 +162,22 @@ export function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-50 lg:inset-auto lg:right-4 lg:top-20 lg:bottom-4 lg:w-96">
-      <Card className="h-full lg:h-auto lg:max-h-[calc(100vh-6rem)] bg-gradient-card shadow-2xl border-primary/20">
-        <CardHeader className="bg-gradient-primary text-white rounded-t-lg">
+    <div className="fixed inset-0 z-50 lg:inset-auto lg:right-0 lg:top-0 lg:bottom-0 lg:w-[32rem] animate-fade-in">
+      {/* Backdrop for mobile */}
+      <div 
+        className="fixed inset-0 bg-black/20 backdrop-blur-sm lg:hidden"
+        onClick={onClose}
+      />
+      
+      {/* Drawer */}
+      <Card className="relative h-full lg:h-screen bg-gradient-card shadow-2xl border-l border-border lg:rounded-none animate-slide-in-right">
+        <CardHeader className="bg-gradient-primary text-white">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <div className="bg-white/20 p-1 rounded">
                 <Bot className="h-4 w-4" />
               </div>
-              <CardTitle className="text-lg">AI Assistant</CardTitle>
+              <CardTitle className="text-lg">AI Copilot</CardTitle>
               <Badge variant="secondary" className="bg-white/20 text-white border-white/20">
                 <Sparkles className="h-3 w-3 mr-1" />
                 Fraud AI
@@ -187,7 +194,7 @@ export function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
           </div>
         </CardHeader>
 
-        <CardContent className="p-0 flex flex-col h-[calc(100%-4rem)] lg:h-96">
+        <CardContent className="p-0 flex flex-col h-[calc(100%-5rem)]">
           {/* Quick Actions */}
           <div className="p-4 border-b border-border">
             <p className="text-xs text-muted-foreground mb-2">Quick Actions:</p>
