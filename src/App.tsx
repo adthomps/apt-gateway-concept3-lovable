@@ -5,7 +5,9 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { LoginPage } from "@/components/auth/LoginPage";
-import Index from "./pages/Index";
+import { AppLayout } from "@/components/layout/AppLayout";
+import { routes } from "@/config/routes";
+import { lazy, Suspense } from "react";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -30,9 +32,27 @@ function AppRoutes() {
 
   return (
     <Routes>
-      <Route path="/" element={<Index />} />
-      {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-      <Route path="*" element={<NotFound />} />
+      <Route element={<AppLayout />}>
+        {routes.map((route) => {
+          const Component = lazy(route.component);
+          return (
+            <Route
+              key={route.id}
+              path={route.path}
+              element={
+                <Suspense fallback={
+                  <div className="flex items-center justify-center py-12">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                  </div>
+                }>
+                  <Component />
+                </Suspense>
+              }
+            />
+          );
+        })}
+        <Route path="*" element={<NotFound />} />
+      </Route>
     </Routes>
   );
 }
