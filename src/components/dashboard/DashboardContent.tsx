@@ -1,11 +1,16 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { MetricCard } from "./MetricCard";
 import { AISummaryPanel } from "./AISummaryPanel";
+import { RevenueChart } from "./RevenueChart";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { DateRangePicker, DateRange } from "@/components/ui/date-range-picker";
 import { LimitedDashboard } from "./LimitedDashboard";
+import { PaymentMethodsOverview } from "@/components/payments/PaymentMethodsOverview";
+import { mockTransactions } from "@/data/mock-transactions";
+import { toast } from "@/hooks/use-toast";
 import { subDays } from "date-fns";
 import { 
   DollarSign, 
@@ -15,12 +20,9 @@ import {
   Users,
   RefreshCw,
   ArrowUpRight,
-  ArrowDownRight,
   Clock,
   CheckCircle,
-  XCircle,
-  Calendar,
-  Filter
+  XCircle
 } from "lucide-react";
 
 import { UserRole } from "@/types/auth";
@@ -30,15 +32,34 @@ interface DashboardContentProps {
 }
 
 export function DashboardContent({ userRole = "admin" }: DashboardContentProps) {
+  const navigate = useNavigate();
   const [dateRange, setDateRange] = useState<DateRange>({
     from: subDays(new Date(), 6),
     to: new Date()
   });
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Show limited dashboard for restricted users
   if (userRole !== "owner" && userRole !== "admin") {
     return <LimitedDashboard userRole={userRole} />;
   }
+
+  const handleRefresh = () => {
+    setIsRefreshing(true);
+    toast({
+      title: "Refreshing data",
+      description: "Fetching latest transaction data..."
+    });
+    setTimeout(() => {
+      setIsRefreshing(false);
+      toast({
+        title: "Data refreshed",
+        description: "Dashboard updated with latest data"
+      });
+    }, 1500);
+  };
+
+  const recentTransactions = mockTransactions.slice(0, 5);
   const metrics = [
     {
       title: "Total Revenue",
@@ -70,13 +91,6 @@ export function DashboardContent({ userRole = "admin" }: DashboardContentProps) 
     }
   ];
 
-  const recentTransactions = [
-    { id: "TXN001", amount: "$245.00", status: "settled", customer: "John Doe", time: "2 min ago" },
-    { id: "TXN002", amount: "$89.99", status: "pending", customer: "Jane Smith", time: "5 min ago" },
-    { id: "TXN003", amount: "$1,250.00", status: "settled", customer: "Acme Corp", time: "12 min ago" },
-    { id: "TXN004", amount: "$67.50", status: "failed", customer: "Bob Wilson", time: "18 min ago" },
-    { id: "TXN005", amount: "$399.99", status: "settled", customer: "Tech Solutions", time: "25 min ago" },
-  ];
 
   const alerts = [
     { type: "warning", message: "3 chargebacks this week (+2 from last week)" },
@@ -97,8 +111,13 @@ export function DashboardContent({ userRole = "admin" }: DashboardContentProps) 
             date={dateRange}
             onDateChange={setDateRange}
           />
-          <Button variant="outline" size="sm">
-            <RefreshCw className="h-4 w-4 mr-2" />
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+          >
+            <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
         </div>
@@ -130,12 +149,18 @@ export function DashboardContent({ userRole = "admin" }: DashboardContentProps) 
           <CardContent>
             <div className="space-y-3">
               {recentTransactions.map((transaction) => (
-                <div key={transaction.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 bg-muted/30 rounded-lg hover:bg-muted/50 transition-smooth gap-2 sm:gap-0">
+                <div 
+                  key={transaction.id} 
+                  className="flex flex-col sm:flex-row sm:items-center justify-between p-3 bg-muted/30 rounded-lg hover:bg-muted/50 transition-smooth gap-2 sm:gap-0 cursor-pointer"
+                  onClick={() => navigate(`/transactions?id=${transaction.id}`)}
+                >
                   <div className="flex items-center space-x-3 min-w-0 flex-1">
                     <div className="flex items-center space-x-2 flex-shrink-0">
                       {transaction.status === "settled" && <CheckCircle className="h-4 w-4 text-success" />}
                       {transaction.status === "pending" && <Clock className="h-4 w-4 text-warning" />}
                       {transaction.status === "failed" && <XCircle className="h-4 w-4 text-destructive" />}
+                      {transaction.status === "refunded" && <ArrowUpRight className="h-4 w-4 text-muted-foreground" />}
+                      {transaction.status === "disputed" && <AlertTriangle className="h-4 w-4 text-warning" />}
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="font-medium text-sm truncate">{transaction.customer}</p>
@@ -147,7 +172,9 @@ export function DashboardContent({ userRole = "admin" }: DashboardContentProps) 
                     <Badge 
                       variant={
                         transaction.status === "settled" ? "default" :
-                        transaction.status === "pending" ? "secondary" : "destructive"
+                        transaction.status === "pending" ? "secondary" : 
+                        transaction.status === "failed" ? "destructive" :
+                        transaction.status === "disputed" ? "destructive" : "outline"
                       }
                       className="text-xs"
                     >
@@ -157,7 +184,11 @@ export function DashboardContent({ userRole = "admin" }: DashboardContentProps) 
                 </div>
               ))}
             </div>
-            <Button variant="outline" className="w-full mt-4">
+            <Button 
+              variant="outline" 
+              className="w-full mt-4"
+              onClick={() => navigate('/transactions')}
+            >
               View All Transactions
             </Button>
           </CardContent>
@@ -186,15 +217,30 @@ export function DashboardContent({ userRole = "admin" }: DashboardContentProps) 
             <div className="pt-4 border-t border-border">
               <h4 className="font-medium text-sm mb-2">Quick Actions</h4>
               <div className="space-y-2">
-                <Button variant="outline" size="sm" className="w-full justify-start">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="w-full justify-start"
+                  onClick={() => navigate('/payment-links')}
+                >
                   <ArrowUpRight className="h-4 w-4 mr-2" />
                   Create Payment Link
                 </Button>
-                <Button variant="outline" size="sm" className="w-full justify-start">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="w-full justify-start"
+                  onClick={() => navigate('/customers')}
+                >
                   <Users className="h-4 w-4 mr-2" />
                   Add Customer
                 </Button>
-                <Button variant="outline" size="sm" className="w-full justify-start">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="w-full justify-start"
+                  onClick={() => navigate('/reports')}
+                >
                   <TrendingUp className="h-4 w-4 mr-2" />
                   View Reports
                 </Button>
@@ -204,24 +250,11 @@ export function DashboardContent({ userRole = "admin" }: DashboardContentProps) 
         </Card>
       </div>
 
-      {/* Revenue Chart Placeholder */}
-      <Card className="bg-gradient-card shadow-md">
-        <CardHeader>
-          <CardTitle className="text-lg font-semibold flex items-center space-x-2">
-            <TrendingUp className="h-5 w-5 text-primary" />
-            <span>Revenue Trends</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="h-64 bg-muted/30 rounded-lg flex items-center justify-center">
-            <div className="text-center">
-              <TrendingUp className="h-12 w-12 text-muted-foreground mx-auto mb-2" />
-              <p className="text-muted-foreground">Chart visualization will be implemented with actual data</p>
-              <p className="text-sm text-muted-foreground mt-1">Revenue trends, payment methods, and success rates</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Revenue Chart */}
+      <RevenueChart />
+
+      {/* Payment Methods Overview */}
+      <PaymentMethodsOverview />
     </div>
   );
 }
