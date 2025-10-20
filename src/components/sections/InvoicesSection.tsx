@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { KPITile } from "@/components/ui/kpi-tile";
 import { EmptyState } from "@/components/ui/empty-state";
+import { EnhancedDataAssistant } from "@/components/transactions/EnhancedDataAssistant";
 import { 
   FileText, 
   Plus, 
@@ -13,8 +14,13 @@ import {
   CheckCircle,
   Filter
 } from "lucide-react";
+import { toast } from "sonner";
 
 export function InvoicesSection() {
+  const handleAutoFill = () => {
+    toast.success("AI auto-fill feature coming soon!");
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-4 sm:space-y-0">
@@ -59,28 +65,41 @@ export function InvoicesSection() {
         />
       </div>
 
-      <Card className="bg-gradient-card shadow-md">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>Recent Invoices</CardTitle>
-            <Button variant="outline" size="sm">
-              <Filter className="h-4 w-4 mr-2" />
-              Filter
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <EmptyState
-            icon={FileText}
-            title="No invoices yet"
-            description="Create your first invoice to get started with billing your customers"
-            action={{
-              label: "Create Invoice",
-              onClick: () => console.log("Create invoice")
-            }}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2">
+          <Card className="bg-gradient-card shadow-md">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle>Recent Invoices</CardTitle>
+                <Button variant="outline" size="sm">
+                  <Filter className="h-4 w-4 mr-2" />
+                  Filter
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <EmptyState
+                icon={FileText}
+                title="No invoices yet"
+                description="Create your first invoice to get started with billing your customers"
+                action={{
+                  label: "Create Invoice",
+                  onClick: () => console.log("Create invoice")
+                }}
+              />
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Enhanced Data Assistant Sidebar */}
+        <div>
+          <EnhancedDataAssistant
+            l3EnforceMode={false}
+            estimatedSavings="$2.45"
+            onAutoFill={handleAutoFill}
           />
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }

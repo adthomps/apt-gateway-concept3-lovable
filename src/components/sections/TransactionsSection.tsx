@@ -18,8 +18,13 @@ import {
   Clock,
   AlertTriangle,
   RotateCcw,
-  DollarSign
+  DollarSign,
+  Building2,
+  Shield
 } from 'lucide-react';
+import { CardIntelligence, EnhancedData } from '@/types/card-intelligence';
+import { mockCardIntelligence, mockEnhancedData } from '@/data/mock-card-intelligence';
+import { getLevelBadgeColor, getCountryFlag } from '@/lib/interchange-calculator';
 
 interface Transaction {
   id: string;
@@ -35,6 +40,8 @@ interface Transaction {
   fraudScore?: number;
   location: string;
   routingPath: string[];
+  cardIntelligence?: CardIntelligence;
+  enhancedData?: EnhancedData;
 }
 
 export function TransactionsSection() {
@@ -60,7 +67,9 @@ export function TransactionsSection() {
       method: 'Visa ****4532',
       fraudScore: 12,
       location: 'New York, NY',
-      routingPath: ['Stripe', 'Chase Bank']
+      routingPath: ['Stripe', 'Chase Bank'],
+      cardIntelligence: mockCardIntelligence['TXN-001'],
+      enhancedData: mockEnhancedData['TXN-001']
     },
     {
       id: 'TXN-002',
@@ -74,7 +83,9 @@ export function TransactionsSection() {
       method: 'Mastercard ****8765',
       fraudScore: 8,
       location: 'Los Angeles, CA',
-      routingPath: ['Square', 'Wells Fargo']
+      routingPath: ['Square', 'Wells Fargo'],
+      cardIntelligence: mockCardIntelligence['TXN-002'],
+      enhancedData: mockEnhancedData['TXN-002']
     },
     {
       id: 'TXN-003',
@@ -89,7 +100,8 @@ export function TransactionsSection() {
       riskScore: 85,
       fraudScore: 85,
       location: 'Chicago, IL',
-      routingPath: ['PayPal', 'Bank of America']
+      routingPath: ['PayPal', 'Bank of America'],
+      cardIntelligence: mockCardIntelligence['TXN-003']
     },
     {
       id: 'TXN-004',
@@ -103,7 +115,8 @@ export function TransactionsSection() {
       method: 'Visa ****1234',
       fraudScore: 23,
       location: 'Miami, FL',
-      routingPath: ['Stripe', 'Declined']
+      routingPath: ['Stripe', 'Declined'],
+      cardIntelligence: mockCardIntelligence['TXN-004']
     },
     {
       id: 'TXN-005',
@@ -131,7 +144,9 @@ export function TransactionsSection() {
       method: 'Amex ****5678',
       fraudScore: 15,
       location: 'Boston, MA',
-      routingPath: ['Square', 'American Express']
+      routingPath: ['Square', 'American Express'],
+      cardIntelligence: mockCardIntelligence['TXN-006'],
+      enhancedData: mockEnhancedData['TXN-006']
     }
   ];
 
@@ -300,7 +315,7 @@ export function TransactionsSection() {
                       <span className="text-sm text-muted-foreground">{transaction.date}</span>
                     </div>
                     
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 text-sm">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3 text-sm">
                       <div>
                         <span className="text-muted-foreground">Customer:</span>
                         <p className="font-medium">{transaction.customer}</p>
@@ -317,7 +332,58 @@ export function TransactionsSection() {
                         <span className="text-muted-foreground">Location:</span>
                         <p className="font-medium">{transaction.location}</p>
                       </div>
+                      {transaction.cardIntelligence && (
+                        <div>
+                          <span className="text-muted-foreground">Card Details:</span>
+                          <div className="flex items-center space-x-1 mt-1">
+                            <Badge variant="outline" className="text-xs capitalize">
+                              {transaction.cardIntelligence.brand}
+                            </Badge>
+                            <Badge variant="outline" className="text-xs capitalize">
+                              {transaction.cardIntelligence.type}
+                            </Badge>
+                            {transaction.cardIntelligence.isCommercial && (
+                              <Badge variant="outline" className="text-xs">
+                                <Building2 className="h-3 w-3" />
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                      )}
                     </div>
+
+                    {/* Card Intelligence Row */}
+                    {transaction.cardIntelligence && (
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+                        <div>
+                          <span className="text-muted-foreground">Last 4:</span>
+                          <p className="font-mono font-medium">•••• {transaction.cardIntelligence.last4}</p>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Issuer:</span>
+                          <p className="font-medium">
+                            {getCountryFlag(transaction.cardIntelligence.issuerCountryCode)} {transaction.cardIntelligence.issuerCountry}
+                          </p>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Level:</span>
+                          <Badge className={getLevelBadgeColor(transaction.cardIntelligence.level)}>
+                            {transaction.cardIntelligence.level}
+                          </Badge>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">CEDP:</span>
+                          {transaction.cardIntelligence.cedpEnabled ? (
+                            <Badge className="bg-success/20 text-success border-success/30">
+                              <Shield className="h-3 w-3 mr-1" />
+                              Enabled
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="text-muted-foreground">No</Badge>
+                          )}
+                        </div>
+                      </div>
+                    )}
 
                     <div className="flex items-center space-x-2 text-xs">
                       <span className="text-muted-foreground">Routing:</span>

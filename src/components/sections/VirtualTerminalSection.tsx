@@ -1,14 +1,27 @@
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
+import { EnhancedDataAssistant } from "@/components/transactions/EnhancedDataAssistant";
 import { 
   Terminal as TerminalIcon, 
   CreditCard,
-  Plus
+  Plus,
+  TrendingDown
 } from "lucide-react";
+import { toast } from "sonner";
 
 export function VirtualTerminalSection() {
+  const [l2Mode, setL2Mode] = useState(true);
+  const [l3Mode, setL3Mode] = useState(false);
+
+  const handleAutoFill = () => {
+    toast.success("AI auto-fill feature coming soon!");
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -60,20 +73,70 @@ export function VirtualTerminalSection() {
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-card shadow-md">
-          <CardHeader>
-            <CardTitle>Cart</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-center py-8">
-              <p className="text-sm text-muted-foreground mb-4">No items in cart</p>
-              <Button variant="outline" size="sm">
-                <Plus className="h-4 w-4 mr-2" />
-                Add Item
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="space-y-4">
+          <Card className="bg-gradient-card shadow-md">
+            <CardHeader>
+              <CardTitle>Cart</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center py-8">
+                <p className="text-sm text-muted-foreground mb-4">No items in cart</p>
+                <Button variant="outline" size="sm">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Item
+                </Button>
+              </div>
+
+              {/* Enhanced Data Toggles */}
+              <div className="mt-6 pt-6 border-t space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label htmlFor="l2-toggle" className="font-medium">L2 Mode</Label>
+                    <p className="text-xs text-muted-foreground">Include customer & tax data</p>
+                  </div>
+                  <Switch
+                    id="l2-toggle"
+                    checked={l2Mode}
+                    onCheckedChange={setL2Mode}
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label htmlFor="l3-toggle" className="font-medium">L3 Mode</Label>
+                    <p className="text-xs text-muted-foreground">Include line item details</p>
+                  </div>
+                  <Switch
+                    id="l3-toggle"
+                    checked={l3Mode}
+                    onCheckedChange={setL3Mode}
+                  />
+                </div>
+
+                {(l2Mode || l3Mode) && (
+                  <div className="p-3 bg-success/10 border border-success/30 rounded-lg">
+                    <div className="flex items-center space-x-2 mb-1">
+                      <TrendingDown className="h-4 w-4 text-success" />
+                      <span className="text-sm font-medium">Savings</span>
+                    </div>
+                    <p className="text-2xl font-bold text-success">
+                      {l3Mode ? "$1.80" : l2Mode ? "$0.87" : "$0.00"}
+                    </p>
+                    <Badge className="mt-2 bg-success/20 text-success border-success/30">
+                      {l3Mode ? "L3" : l2Mode ? "L2" : "L1"} Rate Applied
+                    </Badge>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Enhanced Data Assistant */}
+          <EnhancedDataAssistant
+            l3EnforceMode={false}
+            estimatedSavings={l3Mode ? "$1.80" : l2Mode ? "$0.87" : "$0.00"}
+            onAutoFill={handleAutoFill}
+          />
+        </div>
       </div>
     </div>
   );

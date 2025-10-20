@@ -19,6 +19,9 @@ import {
   Activity,
   Zap
 } from "lucide-react";
+import { CardIntelligencePanel } from "./CardIntelligencePanel";
+import { EnhancedDataPanel } from "./EnhancedDataPanel";
+import { mockCardIntelligence, mockEnhancedData } from '@/data/mock-card-intelligence';
 
 interface Transaction {
   id: string;
@@ -66,6 +69,10 @@ interface TransactionDetailModalProps {
 export function TransactionDetailModal({ transaction, open, onOpenChange }: TransactionDetailModalProps) {
   if (!transaction) return null;
 
+  // Get card intelligence and enhanced data
+  const cardIntelligence = mockCardIntelligence[transaction.id];
+  const enhancedData = mockEnhancedData[transaction.id];
+
   const getStatusIcon = (status: string) => {
     switch (status) {
       case "success": return <CheckCircle className="h-4 w-4 text-green-500" />;
@@ -95,10 +102,12 @@ export function TransactionDetailModal({ transaction, open, onOpenChange }: Tran
         </DialogHeader>
 
         <Tabs defaultValue="overview" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="routing">Routing Path</TabsTrigger>
-            <TabsTrigger value="fraud">Fraud Analysis</TabsTrigger>
+            <TabsTrigger value="card-intelligence">Card Intelligence</TabsTrigger>
+            <TabsTrigger value="enhanced-data">Enhanced Data</TabsTrigger>
+            <TabsTrigger value="routing">Routing</TabsTrigger>
+            <TabsTrigger value="fraud">Fraud</TabsTrigger>
             <TabsTrigger value="technical">Technical</TabsTrigger>
           </TabsList>
 
@@ -197,6 +206,22 @@ export function TransactionDetailModal({ transaction, open, onOpenChange }: Tran
                 </Card>
               )}
             </div>
+          </TabsContent>
+
+          <TabsContent value="card-intelligence">
+            {cardIntelligence ? (
+              <CardIntelligencePanel cardIntelligence={cardIntelligence} />
+            ) : (
+              <Card>
+                <CardContent className="pt-6 text-center text-muted-foreground">
+                  Card intelligence data not available for this transaction
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+
+          <TabsContent value="enhanced-data">
+            <EnhancedDataPanel enhancedData={enhancedData} />
           </TabsContent>
 
           <TabsContent value="routing">

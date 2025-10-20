@@ -25,8 +25,10 @@ import {
   Globe,
   User,
   CreditCard,
-  Building2
+  Building2,
+  TrendingDown
 } from "lucide-react";
+import { InterchangeSettings } from "@/pages/AccountSettings/InterchangeSettings";
 
 export function AccountSettings() {
   const [sandboxMode, setSandboxMode] = useState(false);
@@ -91,12 +93,16 @@ export function AccountSettings() {
 
       <Tabs defaultValue="api-keys" className="space-y-4">
         <div className="overflow-x-auto">
-          <TabsList className="grid grid-cols-2 md:grid-cols-5 w-full min-w-fit">
+          <TabsList className="grid grid-cols-3 md:grid-cols-6 w-full min-w-fit">
             <TabsTrigger value="api-keys" className="text-xs sm:text-sm whitespace-nowrap px-2 sm:px-4">
               API Keys
             </TabsTrigger>
+            <TabsTrigger value="interchange" className="text-xs sm:text-sm whitespace-nowrap px-2 sm:px-4">
+              <TrendingDown className="h-3 w-3 mr-1" />
+              Interchange
+            </TabsTrigger>
             <TabsTrigger value="sandbox" className="text-xs sm:text-sm whitespace-nowrap px-2 sm:px-4">
-              Sandbox & Testing
+              Sandbox
             </TabsTrigger>
             <TabsTrigger value="security" className="text-xs sm:text-sm whitespace-nowrap px-2 sm:px-4">
               Security
@@ -105,7 +111,7 @@ export function AccountSettings() {
               Notifications
             </TabsTrigger>
             <TabsTrigger value="account" className="text-xs sm:text-sm whitespace-nowrap px-2 sm:px-4">
-              Account Info
+              Account
             </TabsTrigger>
           </TabsList>
         </div>
@@ -246,6 +252,10 @@ export function AccountSettings() {
               </CardContent>
             </Card>
           </div>
+        </TabsContent>
+
+        <TabsContent value="interchange">
+          <InterchangeSettings />
         </TabsContent>
 
         <TabsContent value="sandbox">
