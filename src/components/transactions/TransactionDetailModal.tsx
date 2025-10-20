@@ -104,11 +104,13 @@ export function TransactionDetailModal({ transaction, open, onOpenChange }: Tran
         <Tabs defaultValue="overview" className="space-y-4">
           <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="card-intelligence">Card Intelligence</TabsTrigger>
-            <TabsTrigger value="enhanced-data">Enhanced Data</TabsTrigger>
-            <TabsTrigger value="routing">Routing</TabsTrigger>
-            <TabsTrigger value="fraud">Fraud</TabsTrigger>
-            <TabsTrigger value="technical">Technical</TabsTrigger>
+              <TabsTrigger value="card-intelligence">Card Intelligence</TabsTrigger>
+              <TabsTrigger value="enhanced-data">Enhanced Data</TabsTrigger>
+              <TabsTrigger value="routing">Routing</TabsTrigger>
+              <TabsTrigger value="fraud">Fraud</TabsTrigger>
+              <TabsTrigger value="actions">Actions</TabsTrigger>
+              <TabsTrigger value="related">Related</TabsTrigger>
+              <TabsTrigger value="technical">Technical</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview">

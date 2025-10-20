@@ -1,480 +1,462 @@
-import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { DateRangePicker, DateRange } from '@/components/ui/date-range-picker';
-import { TransactionDetailModal } from '@/components/transactions/TransactionDetailModal';
-import { subDays } from 'date-fns';
-import { 
-  CreditCard, 
-  Download, 
-  RefreshCw, 
-  Eye, 
-  Filter,
-  CheckCircle,
-  XCircle,
-  Clock,
-  AlertTriangle,
-  RotateCcw,
-  DollarSign,
+import { useState, useMemo } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
+import { DataTable } from "@/components/ui/data-table";
+import { ColumnChooser } from "@/components/ui/column-chooser";
+import { FilterPanel, FilterConfig } from "@/components/shared/FilterPanel";
+import { ViewsManager } from "@/components/shared/ViewsManager";
+import { BulkActions } from "@/components/shared/BulkActions";
+import { TransactionDetailModal } from "@/components/transactions/TransactionDetailModal";
+import { exportToCSV, SavedView } from "@/lib/views-manager";
+import { mockTransactions, Transaction } from "@/data/mock-transactions";
+import { getLevelBadgeColor, getCountryFlag } from "@/lib/interchange-calculator";
+import {
+  Search,
+  Download,
+  RefreshCw,
+  CreditCard,
   Building2,
-  Shield
-} from 'lucide-react';
-import { CardIntelligence, EnhancedData } from '@/types/card-intelligence';
-import { mockCardIntelligence, mockEnhancedData } from '@/data/mock-card-intelligence';
-import { getLevelBadgeColor, getCountryFlag } from '@/lib/interchange-calculator';
+  Shield,
+  CheckCircle,
+  Clock,
+  XCircle,
+  RotateCcw,
+} from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
-interface Transaction {
-  id: string;
-  date: string;
-  customer: string;
-  email?: string;
-  amount: string;
-  status: 'settled' | 'pending' | 'failed' | 'refunded' | 'void' | 'chargeback' | 'risk_hold';
-  paymentMethod: string;
-  type?: string;
-  method?: string;
-  riskScore?: number;
-  fraudScore?: number;
-  location: string;
-  routingPath: string[];
-  cardIntelligence?: CardIntelligence;
-  enhancedData?: EnhancedData;
-}
+const allColumns = [
+  { id: 'select', label: 'Select' },
+  { id: 'id', label: 'Transaction ID' },
+  { id: 'time', label: 'Time' },
+  { id: 'customer', label: 'Customer' },
+  { id: 'amount', label: 'Amount' },
+  { id: 'status', label: 'Status' },
+  { id: 'paymentMethod', label: 'Payment Method' },
+  { id: 'gateway', label: 'Gateway' },
+  { id: 'cardBrand', label: 'Card Brand' },
+  { id: 'cardType', label: 'Card Type' },
+  { id: 'last4', label: 'Last 4' },
+  { id: 'issuer', label: 'Issuer' },
+  { id: 'level', label: 'Interchange Level' },
+  { id: 'cedp', label: 'CEDP' },
+  { id: 'riskScore', label: 'Risk Score' },
+];
+
+const filterConfigs: FilterConfig[] = [
+  {
+    id: 'status',
+    label: 'Status',
+    type: 'select',
+    options: [
+      { value: 'settled', label: 'Settled' },
+      { value: 'pending', label: 'Pending' },
+      { value: 'failed', label: 'Failed' },
+      { value: 'refunded', label: 'Refunded' },
+      { value: 'disputed', label: 'Disputed' },
+    ],
+  },
+  {
+    id: 'gateway',
+    label: 'Gateway',
+    type: 'select',
+    options: [
+      { value: 'Stripe', label: 'Stripe' },
+      { value: 'Authorize.net', label: 'Authorize.net' },
+      { value: 'Braintree', label: 'Braintree' },
+      { value: 'Square', label: 'Square' },
+      { value: 'Plaid', label: 'Plaid' },
+    ],
+  },
+  {
+    id: 'cardBrand',
+    label: 'Card Brand',
+    type: 'select',
+    options: [
+      { value: 'visa', label: 'Visa' },
+      { value: 'mastercard', label: 'Mastercard' },
+      { value: 'amex', label: 'American Express' },
+      { value: 'discover', label: 'Discover' },
+    ],
+  },
+  {
+    id: 'level',
+    label: 'Interchange Level',
+    type: 'select',
+    options: [
+      { value: 'L1', label: 'Level 1' },
+      { value: 'L2', label: 'Level 2' },
+      { value: 'L3', label: 'Level 3' },
+      { value: 'downgraded', label: 'Downgraded' },
+    ],
+  },
+  {
+    id: 'amountRange',
+    label: 'Amount Range',
+    type: 'range',
+    min: 0,
+    max: 5000,
+  },
+  {
+    id: 'riskScore',
+    label: 'Risk Score',
+    type: 'range',
+    min: 0,
+    max: 100,
+  },
+];
 
 export function TransactionsSection() {
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
   const [showModal, setShowModal] = useState(false);
-  const [dateRange, setDateRange] = useState<DateRange>({
-    from: subDays(new Date(), 6),
-    to: new Date()
-  });
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filters, setFilters] = useState<Record<string, any>>({});
+  const [selectedColumns, setSelectedColumns] = useState<string[]>([
+    'select', 'id', 'time', 'customer', 'amount', 'status', 'paymentMethod', 'level', 'riskScore'
+  ]);
+  const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
+  const [page, setPage] = useState(1);
+  const pageSize = 10;
+  const { toast } = useToast();
 
-  const transactions: Transaction[] = [
-    {
-      id: 'TXN-001',
-      date: '2024-03-15 14:32:00',
-      customer: 'John Doe',
-      email: 'john@example.com',
-      amount: '$245.00',
-      status: 'settled',
-      paymentMethod: 'Visa ****4532',
-      type: 'Credit Card',
-      method: 'Visa ****4532',
-      fraudScore: 12,
-      location: 'New York, NY',
-      routingPath: ['Stripe', 'Chase Bank'],
-      cardIntelligence: mockCardIntelligence['TXN-001'],
-      enhancedData: mockEnhancedData['TXN-001']
-    },
-    {
-      id: 'TXN-002',
-      date: '2024-03-15 14:28:00',
-      customer: 'Jane Smith',
-      email: 'jane@example.com',
-      amount: '$89.99',
-      status: 'pending',
-      paymentMethod: 'Mastercard ****8765',
-      type: 'Credit Card',
-      method: 'Mastercard ****8765',
-      fraudScore: 8,
-      location: 'Los Angeles, CA',
-      routingPath: ['Square', 'Wells Fargo'],
-      cardIntelligence: mockCardIntelligence['TXN-002'],
-      enhancedData: mockEnhancedData['TXN-002']
-    },
-    {
-      id: 'TXN-003',
-      date: '2024-03-15 14:15:00',
-      customer: 'Acme Corp',
-      email: 'billing@acme.com',
-      amount: '$1,250.00',
-      status: 'risk_hold',
-      paymentMethod: 'ACH ****9876',
-      type: 'ACH',
-      method: 'ACH ****9876',
-      riskScore: 85,
-      fraudScore: 85,
-      location: 'Chicago, IL',
-      routingPath: ['PayPal', 'Bank of America'],
-      cardIntelligence: mockCardIntelligence['TXN-003']
-    },
-    {
-      id: 'TXN-004',
-      date: '2024-03-15 13:45:00',
-      customer: 'Bob Wilson',
-      email: 'bob@email.com',
-      amount: '$67.50',
-      status: 'failed',
-      paymentMethod: 'Visa ****1234',
-      type: 'Credit Card',
-      method: 'Visa ****1234',
-      fraudScore: 23,
-      location: 'Miami, FL',
-      routingPath: ['Stripe', 'Declined'],
-      cardIntelligence: mockCardIntelligence['TXN-004']
-    },
-    {
-      id: 'TXN-005',
-      date: '2024-03-15 13:22:00',
-      customer: 'Tech Solutions',
-      email: 'payments@techsol.com',
-      amount: '$399.99',
-      status: 'settled',
-      paymentMethod: 'USDC ****abc123',
-      type: 'Stablecoin',
-      method: 'USDC ****abc123',
-      fraudScore: 5,
-      location: 'San Francisco, CA',
-      routingPath: ['Circle', 'Coinbase']
-    },
-    {
-      id: 'TXN-006',
-      date: '2024-03-15 12:55:00',
-      customer: 'Global Industries',
-      email: 'billing@global.com',
-      amount: '$2,800.00',
-      status: 'chargeback',
-      paymentMethod: 'Amex ****5678',
-      type: 'Credit Card',
-      method: 'Amex ****5678',
-      fraudScore: 15,
-      location: 'Boston, MA',
-      routingPath: ['Square', 'American Express'],
-      cardIntelligence: mockCardIntelligence['TXN-006'],
-      enhancedData: mockEnhancedData['TXN-006']
-    }
-  ];
-
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (status: Transaction['status']) => {
     switch (status) {
       case 'settled':
-        return <Badge variant="default" className="bg-success/20 text-success border-success/30">Settled</Badge>;
+        return <Badge variant="default" className="bg-success/20 text-success border-success/30"><CheckCircle className="h-3 w-3 mr-1" />Settled</Badge>;
       case 'pending':
-        return <Badge variant="secondary" className="bg-warning/20 text-warning border-warning/30">Pending</Badge>;
+        return <Badge variant="secondary" className="bg-warning/20 text-warning border-warning/30"><Clock className="h-3 w-3 mr-1" />Pending</Badge>;
       case 'failed':
-        return <Badge variant="destructive">Failed</Badge>;
+        return <Badge variant="destructive"><XCircle className="h-3 w-3 mr-1" />Failed</Badge>;
       case 'refunded':
-        return <Badge variant="outline" className="border-primary/30 text-primary">Refunded</Badge>;
-      case 'void':
-        return <Badge variant="outline" className="text-muted-foreground">Void</Badge>;
-      case 'chargeback':
-        return <Badge variant="destructive" className="bg-destructive/20">Chargeback</Badge>;
-      case 'risk_hold':
-        return <Badge variant="secondary" className="bg-warning/20 text-warning border-warning/30">Risk Hold</Badge>;
+        return <Badge variant="outline" className="border-primary/30 text-primary"><RotateCcw className="h-3 w-3 mr-1" />Refunded</Badge>;
+      case 'disputed':
+        return <Badge variant="destructive" className="bg-destructive/20"><XCircle className="h-3 w-3 mr-1" />Disputed</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
   };
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'settled':
-        return <CheckCircle className="h-4 w-4 text-success" />;
-      case 'pending':
-        return <Clock className="h-4 w-4 text-warning" />;
-      case 'risk_hold':
-        return <AlertTriangle className="h-4 w-4 text-warning" />;
-      case 'failed':
-      case 'chargeback':
-        return <XCircle className="h-4 w-4 text-destructive" />;
-      case 'refunded':
-        return <RotateCcw className="h-4 w-4 text-primary" />;
-      default:
-        return <Clock className="h-4 w-4 text-muted-foreground" />;
-    }
+  const filteredTransactions = useMemo(() => {
+    return mockTransactions.filter(txn => {
+      // Search filter
+      if (searchTerm && !(
+        txn.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        txn.customer.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        txn.customerEmail.toLowerCase().includes(searchTerm.toLowerCase())
+      )) {
+        return false;
+      }
+
+      // Status filter
+      if (filters.status && txn.status !== filters.status) return false;
+
+      // Gateway filter
+      if (filters.gateway && txn.gateway !== filters.gateway) return false;
+
+      // Card brand filter
+      if (filters.cardBrand && txn.cardIntelligence?.brand !== filters.cardBrand) return false;
+
+      // Interchange level filter
+      if (filters.level && txn.cardIntelligence?.level !== filters.level) return false;
+
+      // Amount range filter
+      if (filters.amountRange) {
+        const [min, max] = filters.amountRange;
+        if (txn.amountValue < min || txn.amountValue > max) return false;
+      }
+
+      // Risk score filter
+      if (filters.riskScore && txn.riskScore) {
+        const [min, max] = filters.riskScore;
+        if (txn.riskScore < min || txn.riskScore > max) return false;
+      }
+
+      return true;
+    });
+  }, [mockTransactions, searchTerm, filters]);
+
+  const paginatedTransactions = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return filteredTransactions.slice(start, start + pageSize);
+  }, [filteredTransactions, page, pageSize]);
+
+  const columns = useMemo(() => {
+    const allColumnDefs = [
+      {
+        key: 'select',
+        header: '',
+        cell: (row: Transaction) => (
+          <Checkbox
+            checked={selectedRows.has(row.id)}
+            onCheckedChange={(checked) => {
+              const newSelection = new Set(selectedRows);
+              if (checked) {
+                newSelection.add(row.id);
+              } else {
+                newSelection.delete(row.id);
+              }
+              setSelectedRows(newSelection);
+            }}
+          />
+        ),
+      },
+      {
+        key: 'id',
+        header: 'ID',
+        cell: (row: Transaction) => (
+          <span className="font-mono text-sm">{row.id}</span>
+        ),
+      },
+      {
+        key: 'time',
+        header: 'Time',
+        cell: (row: Transaction) => (
+          <span className="text-sm text-muted-foreground">{row.time}</span>
+        ),
+      },
+      {
+        key: 'customer',
+        header: 'Customer',
+        cell: (row: Transaction) => (
+          <div>
+            <p className="font-medium">{row.customer}</p>
+            <p className="text-xs text-muted-foreground">{row.customerEmail}</p>
+          </div>
+        ),
+      },
+      {
+        key: 'amount',
+        header: 'Amount',
+        cell: (row: Transaction) => (
+          <span className="font-bold">{row.amount}</span>
+        ),
+      },
+      {
+        key: 'status',
+        header: 'Status',
+        cell: (row: Transaction) => getStatusBadge(row.status),
+      },
+      {
+        key: 'paymentMethod',
+        header: 'Payment Method',
+        cell: (row: Transaction) => (
+          <span className="text-sm">{row.paymentMethod}</span>
+        ),
+      },
+      {
+        key: 'gateway',
+        header: 'Gateway',
+        cell: (row: Transaction) => (
+          <Badge variant="outline" className="text-xs">{row.gateway}</Badge>
+        ),
+      },
+      {
+        key: 'cardBrand',
+        header: 'Card Brand',
+        cell: (row: Transaction) => row.cardIntelligence ? (
+          <Badge variant="outline" className="text-xs capitalize">{row.cardIntelligence.brand}</Badge>
+        ) : <span className="text-muted-foreground">—</span>,
+      },
+      {
+        key: 'cardType',
+        header: 'Card Type',
+        cell: (row: Transaction) => row.cardIntelligence ? (
+          <div className="flex items-center gap-1">
+            <Badge variant="outline" className="text-xs capitalize">{row.cardIntelligence.type}</Badge>
+            {row.cardIntelligence.isCommercial && (
+              <Building2 className="h-3 w-3 text-primary" />
+            )}
+          </div>
+        ) : <span className="text-muted-foreground">—</span>,
+      },
+      {
+        key: 'last4',
+        header: 'Last 4',
+        cell: (row: Transaction) => row.cardIntelligence ? (
+          <span className="font-mono text-sm">•••• {row.cardIntelligence.last4}</span>
+        ) : <span className="text-muted-foreground">—</span>,
+      },
+      {
+        key: 'issuer',
+        header: 'Issuer',
+        cell: (row: Transaction) => row.cardIntelligence ? (
+          <span className="text-sm">
+            {getCountryFlag(row.cardIntelligence.issuerCountryCode)} {row.cardIntelligence.issuerCountry}
+          </span>
+        ) : <span className="text-muted-foreground">—</span>,
+      },
+      {
+        key: 'level',
+        header: 'Level',
+        cell: (row: Transaction) => row.cardIntelligence ? (
+          <Badge className={getLevelBadgeColor(row.cardIntelligence.level)}>
+            {row.cardIntelligence.level}
+          </Badge>
+        ) : <span className="text-muted-foreground">—</span>,
+      },
+      {
+        key: 'cedp',
+        header: 'CEDP',
+        cell: (row: Transaction) => row.cardIntelligence?.cedpEnabled ? (
+          <Badge className="bg-success/20 text-success border-success/30 text-xs">
+            <Shield className="h-3 w-3" />
+          </Badge>
+        ) : <span className="text-muted-foreground">—</span>,
+      },
+      {
+        key: 'riskScore',
+        header: 'Risk Score',
+        cell: (row: Transaction) => row.riskScore ? (
+          <Badge variant={
+            row.riskScore > 50 ? 'destructive' :
+            row.riskScore > 25 ? 'secondary' :
+            'outline'
+          } className="text-xs">
+            {row.riskScore}
+          </Badge>
+        ) : <span className="text-muted-foreground">—</span>,
+      },
+    ];
+
+    return allColumnDefs.filter(col => selectedColumns.includes(col.key));
+  }, [selectedColumns, selectedRows]);
+
+  const handleLoadView = (view: SavedView) => {
+    setFilters(view.filters);
+    setSelectedColumns(view.columns);
+    toast({
+      title: "View loaded",
+      description: `"${view.name}" has been applied`,
+    });
   };
 
-  const handleViewDetails = (transaction: Transaction) => {
-    setSelectedTransaction(transaction);
-    setShowModal(true);
+  const handleExport = () => {
+    const exportData = (selectedRows.size > 0 
+      ? filteredTransactions.filter(t => selectedRows.has(t.id))
+      : filteredTransactions
+    ).map(t => ({
+      ID: t.id,
+      Time: t.time,
+      Customer: t.customer,
+      Email: t.customerEmail,
+      Amount: t.amount,
+      Status: t.status,
+      PaymentMethod: t.paymentMethod,
+      Gateway: t.gateway,
+      Fee: t.fee,
+      Net: t.net,
+    }));
+
+    exportToCSV(exportData, 'transactions');
+    toast({
+      title: "Export complete",
+      description: `Exported ${exportData.length} transactions to CSV`,
+    });
   };
 
-  const handleTransactionAction = (transactionId: string, action: 'void' | 'refund' | 'approve' | 'decline') => {
-    console.log(`${action} transaction ${transactionId}`);
-    // Implementation would handle the specific action
+  const handleBulkRefund = () => {
+    toast({
+      title: "Bulk refund initiated",
+      description: `Processing refunds for ${selectedRows.size} transactions`,
+    });
+    setSelectedRows(new Set());
   };
 
-  const canPerformActions = (status: string) => {
-    return ['settled', 'pending', 'risk_hold'].includes(status);
+  const handleRefresh = () => {
+    toast({
+      title: "Refreshed",
+      description: "Transaction data has been refreshed",
+    });
   };
-
-  const filteredTransactions = transactions.filter(transaction => {
-    const matchesStatus = statusFilter === 'all' || transaction.status === statusFilter;
-    const matchesSearch = transaction.customer.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         transaction.id.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesStatus && matchesSearch;
-  });
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-4 sm:space-y-0">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-foreground flex items-center space-x-2">
+          <h1 className="text-2xl font-bold flex items-center gap-2">
             <CreditCard className="h-6 w-6 text-primary" />
-            <span>Transactions</span>
+            Transactions
           </h1>
           <p className="text-muted-foreground">View and manage all payment transactions</p>
         </div>
-        <div className="flex items-center space-x-2">
-          <Button variant="outline" size="sm">
+        <div className="flex items-center gap-2 flex-wrap">
+          <ViewsManager
+            context="transactions"
+            currentFilters={filters}
+            currentColumns={selectedColumns}
+            onLoadView={handleLoadView}
+          />
+          <ColumnChooser
+            columns={allColumns}
+            selectedColumns={selectedColumns}
+            onSelectionChange={setSelectedColumns}
+          />
+          <Button variant="outline" size="sm" onClick={handleExport}>
             <Download className="h-4 w-4 mr-2" />
             Export
           </Button>
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" onClick={handleRefresh}>
             <RefreshCw className="h-4 w-4 mr-2" />
             Refresh
           </Button>
         </div>
       </div>
 
-      {/* Filters */}
-      <Card className="bg-gradient-card shadow-md">
-        <CardHeader>
-          <CardTitle className="text-lg font-semibold flex items-center space-x-2">
-            <Filter className="h-5 w-5 text-primary" />
-            <span>Filters</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div>
-              <label className="text-sm font-medium text-foreground mb-2 block">Search</label>
+      {/* Search & Filters */}
+      <Card>
+        <CardContent className="pt-6 space-y-4">
+          <div className="flex items-center gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Customer name or Transaction ID"
+                placeholder="Search by transaction ID, customer name, or email..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
               />
-            </div>
-            <div>
-              <label className="text-sm font-medium text-foreground mb-2 block">Date Range</label>
-              <DateRangePicker
-                date={dateRange}
-                onDateChange={setDateRange}
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium text-foreground mb-2 block">Status</label>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder="All Statuses" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Statuses</SelectItem>
-                  <SelectItem value="settled">Settled</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="risk_hold">Risk Hold</SelectItem>
-                  <SelectItem value="failed">Failed</SelectItem>
-                  <SelectItem value="refunded">Refunded</SelectItem>
-                  <SelectItem value="chargeback">Chargeback</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <label className="text-sm font-medium text-foreground mb-2 block">Amount Range</label>
-              <div className="flex items-center space-x-2">
-                <Input placeholder="Min" className="w-20" />
-                <span className="text-muted-foreground">-</span>
-                <Input placeholder="Max" className="w-20" />
-              </div>
             </div>
           </div>
+          <FilterPanel
+            filters={filterConfigs}
+            values={filters}
+            onValuesChange={setFilters}
+          />
         </CardContent>
       </Card>
 
-      {/* Transaction History */}
-      <Card className="bg-gradient-card shadow-md">
-        <CardHeader>
-          <CardTitle className="text-lg font-semibold flex items-center space-x-2">
-            <DollarSign className="h-5 w-5 text-primary" />
-            <span>Transaction History</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {filteredTransactions.map((transaction) => (
-              <div key={transaction.id} className="p-4 bg-muted/30 rounded-lg border border-border hover:bg-muted/50 transition-smooth">
-                <div className="flex flex-col lg:flex-row lg:items-center justify-between space-y-4 lg:space-y-0">
-                  <div className="flex-1 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-3">
-                        {getStatusIcon(transaction.status)}
-                        <span className="font-medium text-foreground">{transaction.id}</span>
-                        {getStatusBadge(transaction.status)}
-                        {transaction.riskScore && (
-                          <Badge variant="outline" className="border-warning/30 text-warning">
-                            Risk: {transaction.riskScore}
-                          </Badge>
-                        )}
-                      </div>
-                      <span className="text-sm text-muted-foreground">{transaction.date}</span>
-                    </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3 text-sm">
-                      <div>
-                        <span className="text-muted-foreground">Customer:</span>
-                        <p className="font-medium">{transaction.customer}</p>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground">Amount:</span>
-                        <p className="font-bold text-foreground">{transaction.amount}</p>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground">Payment Method:</span>
-                        <p className="font-medium">{transaction.paymentMethod}</p>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground">Location:</span>
-                        <p className="font-medium">{transaction.location}</p>
-                      </div>
-                      {transaction.cardIntelligence && (
-                        <div>
-                          <span className="text-muted-foreground">Card Details:</span>
-                          <div className="flex items-center space-x-1 mt-1">
-                            <Badge variant="outline" className="text-xs capitalize">
-                              {transaction.cardIntelligence.brand}
-                            </Badge>
-                            <Badge variant="outline" className="text-xs capitalize">
-                              {transaction.cardIntelligence.type}
-                            </Badge>
-                            {transaction.cardIntelligence.isCommercial && (
-                              <Badge variant="outline" className="text-xs">
-                                <Building2 className="h-3 w-3" />
-                              </Badge>
-                            )}
-                          </div>
-                        </div>
-                      )}
-                    </div>
+      {/* Bulk Actions Bar */}
+      <BulkActions
+        selectedCount={selectedRows.size}
+        onClearSelection={() => setSelectedRows(new Set())}
+        onExport={handleExport}
+        onRefund={handleBulkRefund}
+        onSendReceipt={() => {
+          toast({ title: "Receipts sent", description: `Sent ${selectedRows.size} receipts` });
+          setSelectedRows(new Set());
+        }}
+      />
 
-                    {/* Card Intelligence Row */}
-                    {transaction.cardIntelligence && (
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
-                        <div>
-                          <span className="text-muted-foreground">Last 4:</span>
-                          <p className="font-mono font-medium">•••• {transaction.cardIntelligence.last4}</p>
-                        </div>
-                        <div>
-                          <span className="text-muted-foreground">Issuer:</span>
-                          <p className="font-medium">
-                            {getCountryFlag(transaction.cardIntelligence.issuerCountryCode)} {transaction.cardIntelligence.issuerCountry}
-                          </p>
-                        </div>
-                        <div>
-                          <span className="text-muted-foreground">Level:</span>
-                          <Badge className={getLevelBadgeColor(transaction.cardIntelligence.level)}>
-                            {transaction.cardIntelligence.level}
-                          </Badge>
-                        </div>
-                        <div>
-                          <span className="text-muted-foreground">CEDP:</span>
-                          {transaction.cardIntelligence.cedpEnabled ? (
-                            <Badge className="bg-success/20 text-success border-success/30">
-                              <Shield className="h-3 w-3 mr-1" />
-                              Enabled
-                            </Badge>
-                          ) : (
-                            <Badge variant="outline" className="text-muted-foreground">No</Badge>
-                          )}
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="flex items-center space-x-2 text-xs">
-                      <span className="text-muted-foreground">Routing:</span>
-                      {transaction.routingPath.map((path, index) => (
-                        <span key={index} className="flex items-center">
-                          {index > 0 && <span className="mx-1 text-muted-foreground">→</span>}
-                          <Badge variant="outline" className="text-xs">{path}</Badge>
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Actions */}
-                  <div className="flex items-center space-x-2 lg:ml-4">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleViewDetails(transaction)}
-                    >
-                      <Eye className="h-4 w-4 mr-1" />
-                      Details
-                    </Button>
-                    
-                    {canPerformActions(transaction.status) && (
-                      <>
-                        {transaction.status === 'risk_hold' && (
-                          <>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="border-success text-success hover:bg-success/10"
-                              onClick={() => handleTransactionAction(transaction.id, 'approve')}
-                            >
-                              <CheckCircle className="h-4 w-4 mr-1" />
-                              Approve
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="border-destructive text-destructive hover:bg-destructive/10"
-                              onClick={() => handleTransactionAction(transaction.id, 'decline')}
-                            >
-                              <XCircle className="h-4 w-4 mr-1" />
-                              Decline
-                            </Button>
-                          </>
-                        )}
-                        
-                        {(transaction.status === 'settled' || transaction.status === 'pending') && (
-                          <>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="border-warning text-warning hover:bg-warning/10"
-                              onClick={() => handleTransactionAction(transaction.id, 'void')}
-                            >
-                              <XCircle className="h-4 w-4 mr-1" />
-                              Void
-                            </Button>
-                            {transaction.status === 'settled' && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="border-primary text-primary hover:bg-primary/10"
-                                onClick={() => handleTransactionAction(transaction.id, 'refund')}
-                              >
-                                <RotateCcw className="h-4 w-4 mr-1" />
-                                Refund
-                              </Button>
-                            )}
-                          </>
-                        )}
-                      </>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Pagination */}
-          <div className="flex items-center justify-between mt-6 pt-4 border-t border-border">
-            <div className="text-sm text-muted-foreground">
-              Showing {filteredTransactions.length} of {transactions.length} transactions
-            </div>
-            <div className="flex items-center space-x-2">
-              <Button variant="outline" size="sm" disabled>Previous</Button>
-              <span className="text-sm text-muted-foreground">Page 1 of 1</span>
-              <Button variant="outline" size="sm" disabled>Next</Button>
-            </div>
-          </div>
+      {/* Transactions Table */}
+      <Card>
+        <CardContent className="p-0">
+          <DataTable
+            data={paginatedTransactions}
+            columns={columns}
+            onRowClick={(row) => {
+              setSelectedTransaction(row);
+              setShowModal(true);
+            }}
+            emptyMessage="No transactions found"
+            pagination={{
+              page,
+              pageSize,
+              total: filteredTransactions.length,
+              onPageChange: setPage,
+            }}
+          />
         </CardContent>
       </Card>
 
