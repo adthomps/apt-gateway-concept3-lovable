@@ -7,6 +7,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { DataTable } from "@/components/ui/data-table";
 import { ColumnChooser } from "@/components/ui/column-chooser";
 import { FilterPanel, FilterConfig } from "@/components/shared/FilterPanel";
+import { AdvancedFilterModal } from "@/components/shared/AdvancedFilterModal";
 import { ViewsManager } from "@/components/shared/ViewsManager";
 import { BulkActions } from "@/components/shared/BulkActions";
 import { TransactionDetailModal } from "@/components/transactions/TransactionDetailModal";
@@ -24,6 +25,8 @@ import {
   Clock,
   XCircle,
   RotateCcw,
+  SlidersHorizontal,
+  Zap,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -47,9 +50,14 @@ const allColumns = [
 
 const filterConfigs: FilterConfig[] = [
   {
+    id: 'dateRange',
+    label: 'Date Range',
+    type: 'daterange',
+  },
+  {
     id: 'status',
     label: 'Status',
-    type: 'select',
+    type: 'multiselect',
     options: [
       { value: 'settled', label: 'Settled' },
       { value: 'pending', label: 'Pending' },
@@ -61,7 +69,7 @@ const filterConfigs: FilterConfig[] = [
   {
     id: 'gateway',
     label: 'Gateway',
-    type: 'select',
+    type: 'multiselect',
     options: [
       { value: 'Stripe', label: 'Stripe' },
       { value: 'Authorize.net', label: 'Authorize.net' },
@@ -73,23 +81,12 @@ const filterConfigs: FilterConfig[] = [
   {
     id: 'cardBrand',
     label: 'Card Brand',
-    type: 'select',
+    type: 'multiselect',
     options: [
       { value: 'visa', label: 'Visa' },
       { value: 'mastercard', label: 'Mastercard' },
       { value: 'amex', label: 'American Express' },
       { value: 'discover', label: 'Discover' },
-    ],
-  },
-  {
-    id: 'level',
-    label: 'Interchange Level',
-    type: 'select',
-    options: [
-      { value: 'L1', label: 'Level 1' },
-      { value: 'L2', label: 'Level 2' },
-      { value: 'L3', label: 'Level 3' },
-      { value: 'downgraded', label: 'Downgraded' },
     ],
   },
   {
@@ -99,18 +96,50 @@ const filterConfigs: FilterConfig[] = [
     min: 0,
     max: 5000,
   },
+];
+
+const quickPresets = [
   {
-    id: 'riskScore',
-    label: 'Risk Score',
-    type: 'range',
-    min: 0,
-    max: 100,
+    id: 'today',
+    label: 'Today',
+    icon: Zap,
+    filters: {
+      dateRange: {
+        from: new Date(),
+        to: new Date(),
+      },
+    },
+  },
+  {
+    id: 'failed',
+    label: 'Failed Transactions',
+    icon: XCircle,
+    filters: {
+      status: ['failed'],
+    },
+  },
+  {
+    id: 'high-risk',
+    label: 'High Risk',
+    icon: Shield,
+    filters: {
+      minRisk: 50,
+    },
+  },
+  {
+    id: 'large',
+    label: 'Large Transactions',
+    icon: CreditCard,
+    filters: {
+      minAmount: 1000,
+    },
   },
 ];
 
 export function TransactionsSection() {
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
   const [showModal, setShowModal] = useState(false);
+  const [showAdvancedModal, setShowAdvancedModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [filters, setFilters] = useState<Record<string, any>>({});
   const [selectedColumns, setSelectedColumns] = useState<string[]>([
@@ -149,17 +178,27 @@ export function TransactionsSection() {
         return false;
       }
 
-      // Status filter
-      if (filters.status && txn.status !== filters.status) return false;
+      // Date range filter
+      if (filters.dateRange?.from || filters.dateRange?.to) {
+        const txnDate = new Date(txn.time);
+        if (filters.dateRange.from && txnDate < filters.dateRange.from) return false;
+        if (filters.dateRange.to && txnDate > filters.dateRange.to) return false;
+      }
 
-      // Gateway filter
-      if (filters.gateway && txn.gateway !== filters.gateway) return false;
+      // Status filter (multiselect)
+      if (filters.status?.length > 0 && !filters.status.includes(txn.status)) return false;
 
-      // Card brand filter
-      if (filters.cardBrand && txn.cardIntelligence?.brand !== filters.cardBrand) return false;
+      // Gateway filter (multiselect)
+      if (filters.gateway?.length > 0 && !filters.gateway.includes(txn.gateway)) return false;
 
-      // Interchange level filter
-      if (filters.level && txn.cardIntelligence?.level !== filters.level) return false;
+      // Card brand filter (multiselect)
+      if (filters.cardBrand?.length > 0 && !filters.cardBrand.includes(txn.cardIntelligence?.brand)) return false;
+
+      // Card type filter (multiselect)
+      if (filters.cardType?.length > 0 && !filters.cardType.includes(txn.cardIntelligence?.type)) return false;
+
+      // Interchange level filter (multiselect)
+      if (filters.level?.length > 0 && !filters.level.includes(txn.cardIntelligence?.level)) return false;
 
       // Amount range filter
       if (filters.amountRange) {
@@ -167,11 +206,37 @@ export function TransactionsSection() {
         if (txn.amountValue < min || txn.amountValue > max) return false;
       }
 
+      // Min/Max amount filters
+      if (filters.minAmount !== undefined && txn.amountValue < filters.minAmount) return false;
+      if (filters.maxAmount !== undefined && txn.amountValue > filters.maxAmount) return false;
+
       // Risk score filter
       if (filters.riskScore && txn.riskScore) {
         const [min, max] = filters.riskScore;
         if (txn.riskScore < min || txn.riskScore > max) return false;
       }
+
+      // Min/Max risk filters
+      if (filters.minRisk !== undefined && (!txn.riskScore || txn.riskScore < filters.minRisk)) return false;
+      if (filters.maxRisk !== undefined && (!txn.riskScore || txn.riskScore > filters.maxRisk)) return false;
+
+      // Currency filter
+      if (filters.currency && !txn.amount.includes(filters.currency)) return false;
+
+      // Issuer country filter
+      if (filters.issuerCountry && txn.cardIntelligence?.issuerCountryCode !== filters.issuerCountry) return false;
+
+      // Commercial card filter
+      if (filters.isCommercial && !txn.cardIntelligence?.isCommercial) return false;
+
+      // CEDP filter
+      if (filters.cedpEnabled && !txn.cardIntelligence?.cedpEnabled) return false;
+
+      // Customer email filter
+      if (filters.customerEmail && !txn.customerEmail.toLowerCase().includes(filters.customerEmail.toLowerCase())) return false;
+
+      // Transaction ID filter
+      if (filters.transactionId && !txn.id.toLowerCase().includes(filters.transactionId.toLowerCase())) return false;
 
       return true;
     });
@@ -371,6 +436,14 @@ export function TransactionsSection() {
     });
   };
 
+  const applyQuickPreset = (preset: typeof quickPresets[0]) => {
+    setFilters(preset.filters);
+    toast({
+      title: "Quick filter applied",
+      description: `Showing ${preset.label.toLowerCase()}`,
+    });
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -418,7 +491,32 @@ export function TransactionsSection() {
                 className="pl-10"
               />
             </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowAdvancedModal(true)}
+            >
+              <SlidersHorizontal className="h-4 w-4 mr-2" />
+              Advanced
+            </Button>
           </div>
+
+          {/* Quick Presets */}
+          <div className="flex flex-wrap gap-2">
+            {quickPresets.map((preset) => (
+              <Button
+                key={preset.id}
+                variant="outline"
+                size="sm"
+                onClick={() => applyQuickPreset(preset)}
+                className="h-8"
+              >
+                <preset.icon className="h-3 w-3 mr-1" />
+                {preset.label}
+              </Button>
+            ))}
+          </div>
+
           <FilterPanel
             filters={filterConfigs}
             values={filters}
@@ -468,6 +566,15 @@ export function TransactionsSection() {
           onOpenChange={setShowModal}
         />
       )}
+
+      {/* Advanced Filter Modal */}
+      <AdvancedFilterModal
+        open={showAdvancedModal}
+        onOpenChange={setShowAdvancedModal}
+        filters={filters}
+        onApply={setFilters}
+        onReset={() => setFilters({})}
+      />
     </div>
   );
 }

@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
 import {
   Collapsible,
@@ -122,6 +123,32 @@ export function FilterPanel({ filters, values, onValuesChange }: FilterPanelProp
                   </Select>
                 )}
 
+                {filter.type === 'multiselect' && (
+                  <div className="space-y-2">
+                    {filter.options?.map((option) => (
+                      <div key={option.value} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`${filter.id}-${option.value}`}
+                          checked={values[filter.id]?.includes(option.value) || false}
+                          onCheckedChange={(checked) => {
+                            const current = values[filter.id] || [];
+                            const updated = checked
+                              ? [...current, option.value]
+                              : current.filter((v: string) => v !== option.value);
+                            updateFilter(filter.id, updated.length > 0 ? updated : undefined);
+                          }}
+                        />
+                        <label
+                          htmlFor={`${filter.id}-${option.value}`}
+                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                        >
+                          {option.label}
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
                 {filter.type === 'text' && (
                   <Input
                     id={filter.id}
@@ -166,7 +193,10 @@ export function FilterPanel({ filters, values, onValuesChange }: FilterPanelProp
             if (!filter || !value) return null;
 
             let displayValue = '';
-            if (Array.isArray(value)) {
+            if (filter.type === 'multiselect' && Array.isArray(value)) {
+              const labels = value.map(v => filter.options?.find(o => o.value === v)?.label || v);
+              displayValue = labels.join(', ');
+            } else if (filter.type === 'range' && Array.isArray(value)) {
               displayValue = `${value[0]} - ${value[1]}`;
             } else if (typeof value === 'object') {
               displayValue = 'Custom range';
