@@ -88,7 +88,8 @@ export function TransactionDetailModal({ transaction, open, onOpenChange }: Tran
     return { level: "High", color: "bg-red-500" };
   };
 
-  const riskInfo = getRiskLevel(transaction.fraudScore);
+  const riskScore = transaction.fraudScore || transaction.riskScore || 0;
+  const riskInfo = getRiskLevel(riskScore);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -102,15 +103,13 @@ export function TransactionDetailModal({ transaction, open, onOpenChange }: Tran
         </DialogHeader>
 
         <Tabs defaultValue="overview" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-6">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="card-intelligence">Card Intelligence</TabsTrigger>
-              <TabsTrigger value="enhanced-data">Enhanced Data</TabsTrigger>
-              <TabsTrigger value="routing">Routing</TabsTrigger>
-              <TabsTrigger value="fraud">Fraud</TabsTrigger>
-              <TabsTrigger value="actions">Actions</TabsTrigger>
-              <TabsTrigger value="related">Related</TabsTrigger>
-              <TabsTrigger value="technical">Technical</TabsTrigger>
+            <TabsTrigger value="card-intelligence">Card Intel</TabsTrigger>
+            <TabsTrigger value="enhanced-data">Enhanced</TabsTrigger>
+            <TabsTrigger value="routing">Routing</TabsTrigger>
+            <TabsTrigger value="fraud">Fraud</TabsTrigger>
+            <TabsTrigger value="technical">Technical</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview">
@@ -129,7 +128,7 @@ export function TransactionDetailModal({ transaction, open, onOpenChange }: Tran
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">Email</p>
-                    <p className="font-medium">{transaction.email}</p>
+                    <p className="font-medium">{transaction.customerEmail || transaction.email}</p>
                   </div>
                   {transaction.billingAddress && (
                     <div>
@@ -158,7 +157,7 @@ export function TransactionDetailModal({ transaction, open, onOpenChange }: Tran
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">Payment Method</p>
-                    <p className="font-medium">{transaction.method}</p>
+                    <p className="font-medium">{transaction.paymentMethod || transaction.method}</p>
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">Status</p>
@@ -175,7 +174,7 @@ export function TransactionDetailModal({ transaction, open, onOpenChange }: Tran
                     <p className="text-sm text-muted-foreground">Date & Time</p>
                     <p className="font-medium flex items-center space-x-1">
                       <Calendar className="h-4 w-4" />
-                      <span>{transaction.date}</span>
+                      <span>{transaction.time || transaction.date}</span>
                     </p>
                   </div>
                 </CardContent>
@@ -232,7 +231,7 @@ export function TransactionDetailModal({ transaction, open, onOpenChange }: Tran
                 <CardTitle className="text-lg flex items-center space-x-2">
                   <Activity className="h-5 w-5" />
                   <span>Payment Routing Journey</span>
-                  {transaction.routingPath.length > 1 && (
+                  {transaction.routingPath && transaction.routingPath.length > 1 && (
                     <Badge variant="outline" className="ml-2">
                       <RotateCcw className="h-3 w-3 mr-1" />
                       Auto-Retry Enabled
@@ -241,8 +240,15 @@ export function TransactionDetailModal({ transaction, open, onOpenChange }: Tran
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {transaction.routingPath.map((route, index) => (
+                {!transaction.routingPath || transaction.routingPath.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Activity className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                    <p>No routing information available for this transaction</p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="space-y-4">
+                      {transaction.routingPath.map((route, index) => (
                     <div key={index} className="flex items-center space-x-4 p-4 border rounded-lg">
                       <div className="flex items-center space-x-2">
                         <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-sm font-medium">
@@ -293,6 +299,8 @@ export function TransactionDetailModal({ transaction, open, onOpenChange }: Tran
                     </div>
                   </div>
                 )}
+                  </>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -312,13 +320,13 @@ export function TransactionDetailModal({ transaction, open, onOpenChange }: Tran
                       <div className={`w-4 h-4 rounded-full ${riskInfo.color}`}></div>
                       <span className="font-medium">{riskInfo.level} Risk</span>
                     </div>
-                    <div className="text-2xl font-bold">{transaction.fraudScore}/100</div>
+                    <div className="text-2xl font-bold">{riskScore}/100</div>
                   </div>
                   
                   <div className="w-full bg-muted rounded-full h-2">
                     <div 
                       className={`h-2 rounded-full ${riskInfo.color}`}
-                      style={{ width: `${transaction.fraudScore}%` }}
+                      style={{ width: `${riskScore}%` }}
                     ></div>
                   </div>
                 </CardContent>
