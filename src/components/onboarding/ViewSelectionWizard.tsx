@@ -34,7 +34,7 @@ export function ViewSelectionWizard({
 
   return (
     <Dialog open={open} onOpenChange={() => {}}>
-      <DialogContent className="max-w-3xl bg-background">
+      <DialogContent className="max-w-3xl sm:max-w-[90vw] max-h-[90vh] overflow-y-auto bg-background">
         <DialogHeader>
           <DialogTitle className="text-2xl">Welcome to Transactions</DialogTitle>
           <DialogDescription className="text-base">
@@ -51,7 +51,7 @@ export function ViewSelectionWizard({
             return (
               <Card
                 key={key}
-                className={`cursor-pointer transition-all relative ${
+                className={`cursor-pointer transition-all relative touch-manipulation active:scale-95 ${
                   isSelected ? 'ring-2 ring-primary shadow-lg' : 'hover:shadow-md'
                 }`}
                 onClick={() => setSelected(key)}
@@ -87,11 +87,18 @@ export function ViewSelectionWizard({
           })}
         </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onSelect('simple')}>
+        <DialogFooter className="flex-col sm:flex-row gap-2">
+          <Button 
+            variant="outline" 
+            onClick={() => onSelect('simple')}
+            className="w-full sm:w-auto touch-manipulation"
+          >
             Skip & Use Simple
           </Button>
-          <Button onClick={() => onSelect(selected)}>
+          <Button 
+            onClick={() => onSelect(selected)}
+            className="w-full sm:w-auto touch-manipulation"
+          >
             Continue with {VIEW_PRESETS[selected].name}
           </Button>
         </DialogFooter>

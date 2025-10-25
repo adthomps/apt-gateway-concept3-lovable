@@ -31,7 +31,7 @@ export function MobileTransactionCard({
 
   return (
     <Card 
-      className="cursor-pointer hover:bg-muted/50 active:scale-[0.98] transition-all"
+      className="cursor-pointer hover:bg-muted/50 active:scale-[0.98] transition-all touch-manipulation"
       onClick={onClick}
     >
       <CardContent className="p-4">

@@ -26,7 +26,7 @@ export function ViewComplexityToggle({
 
   return (
     <TooltipProvider>
-      <div className="inline-flex rounded-lg border bg-background p-1">
+      <div className="inline-flex rounded-lg border bg-background p-1 touch-manipulation">
         {levels.map(({ key, icon: Icon, label }) => {
           const isActive = currentLevel === key;
           const preset = VIEW_PRESETS[key];
@@ -37,7 +37,7 @@ export function ViewComplexityToggle({
                 <Button
                   variant={isActive ? "default" : "ghost"}
                   size="sm"
-                  className="gap-2"
+                  className="gap-2 touch-manipulation active:scale-95 min-h-[44px]"
                   onClick={() => onLevelChange(key)}
                 >
                   <Icon className="h-4 w-4" />
