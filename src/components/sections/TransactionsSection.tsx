@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -11,9 +11,25 @@ import { AdvancedFilterModal } from "@/components/shared/AdvancedFilterModal";
 import { ViewsManager } from "@/components/shared/ViewsManager";
 import { BulkActions } from "@/components/shared/BulkActions";
 import { TransactionDetailModal } from "@/components/transactions/TransactionDetailModal";
+import { ViewComplexityToggle } from "@/components/shared/ViewComplexityToggle";
+import { ViewSelectionWizard } from "@/components/onboarding/ViewSelectionWizard";
+import { UpgradeViewPrompt } from "@/components/shared/UpgradeViewPrompt";
+import { ViewRecommendationBanner } from "@/components/shared/ViewRecommendationBanner";
+import { MobileTransactionCard } from "@/components/ui/mobile-transaction-card";
 import { exportToCSV, SavedView } from "@/lib/views-manager";
 import { mockTransactions, Transaction } from "@/data/mock-transactions";
 import { getLevelBadgeColor, getCountryFlag } from "@/lib/interchange-calculator";
+import { useViewComplexity } from "@/hooks/useViewComplexity";
+import { VIEW_PRESETS, ViewComplexity } from "@/types/view-complexity";
+import { 
+  detectUserProfile, 
+  getUsageMetrics, 
+  updateUsageMetrics,
+  trackFeatureUsage,
+  trackViewChange 
+} from "@/lib/user-profile-detector";
+import { generateRecommendations, ViewRecommendation } from "@/lib/view-recommendations";
+import { RESPONSIVE_COLUMNS, useScreenSize } from "@/lib/responsive-columns";
 import {
   Search,
   Download,
@@ -142,13 +158,71 @@ export function TransactionsSection() {
   const [showAdvancedModal, setShowAdvancedModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [filters, setFilters] = useState<Record<string, any>>({});
-  const [selectedColumns, setSelectedColumns] = useState<string[]>([
-    'select', 'id', 'time', 'customer', 'amount', 'status', 'paymentMethod', 'level', 'riskScore'
-  ]);
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
   const [page, setPage] = useState(1);
   const pageSize = 10;
   const { toast } = useToast();
+  const screenSize = useScreenSize();
+
+  // View complexity state
+  const { complexity, setComplexity } = useViewComplexity('standard');
+  const currentPreset = VIEW_PRESETS[complexity];
+
+  // Column selection with sync to complexity
+  const [selectedColumns, setSelectedColumns] = useState<string[]>(
+    () => currentPreset.columns
+  );
+
+  // Sync columns when complexity changes
+  useEffect(() => {
+    setSelectedColumns(currentPreset.columns);
+  }, [complexity]);
+
+  // First-time wizard state
+  const [showWizard, setShowWizard] = useState(() => {
+    const metrics = getUsageMetrics();
+    return metrics.sessionCount === 0;
+  });
+
+  // Dismissed prompts tracking
+  const [dismissedPrompts, setDismissedPrompts] = useState<string[]>([]);
+
+  // Recommendations state
+  const [activeRecommendation, setActiveRecommendation] = useState<ViewRecommendation | null>(null);
+
+  // Track session on mount
+  useEffect(() => {
+    const metrics = getUsageMetrics();
+    updateUsageMetrics({
+      sessionCount: metrics.sessionCount + 1,
+    });
+  }, []);
+
+  // Check for recommendations periodically
+  useEffect(() => {
+    const metrics = getUsageMetrics();
+    
+    if (metrics.sessionCount > 0 && metrics.sessionCount % 10 === 0) {
+      const recommendations = generateRecommendations(metrics, complexity);
+      
+      if (recommendations.length > 0) {
+        const topRecommendation = recommendations.sort((a, b) => b.confidence - a.confidence)[0];
+        setActiveRecommendation(topRecommendation);
+      }
+    }
+  }, [complexity]);
+
+  // Handle wizard selection
+  const handleWizardSelect = (level: ViewComplexity) => {
+    setComplexity(level);
+    setShowWizard(false);
+    trackViewChange('simple', level, 'wizard');
+    
+    const metrics = getUsageMetrics();
+    updateUsageMetrics({
+      sessionCount: metrics.sessionCount + 1,
+    });
+  };
 
   const getStatusBadge = (status: Transaction['status']) => {
     switch (status) {
@@ -391,13 +465,26 @@ export function TransactionsSection() {
   const handleLoadView = (view: SavedView) => {
     setFilters(view.filters);
     setSelectedColumns(view.columns);
-    toast({
-      title: "View loaded",
-      description: `"${view.name}" has been applied`,
-    });
+    
+    // Auto-switch to view's complexity level
+    if (view.complexity !== complexity) {
+      const oldComplexity = complexity;
+      setComplexity(view.complexity);
+      trackViewChange(oldComplexity, view.complexity, 'auto');
+      toast({
+        title: "View loaded",
+        description: `Switched to ${view.complexity} view to match "${view.name}"`,
+      });
+    } else {
+      toast({
+        title: "View loaded",
+        description: `Applied "${view.name}"`,
+      });
+    }
   };
 
   const handleExport = () => {
+    trackFeatureUsage('export');
     const exportData = (selectedRows.size > 0 
       ? filteredTransactions.filter(t => selectedRows.has(t.id))
       : filteredTransactions
@@ -422,6 +509,7 @@ export function TransactionsSection() {
   };
 
   const handleBulkRefund = () => {
+    trackFeatureUsage('bulkRefund');
     toast({
       title: "Bulk refund initiated",
       description: `Processing refunds for ${selectedRows.size} transactions`,
@@ -438,11 +526,17 @@ export function TransactionsSection() {
 
   const applyQuickPreset = (preset: typeof quickPresets[0]) => {
     setFilters(preset.filters);
+    trackFeatureUsage(`preset_${preset.id}`);
     toast({
       title: "Quick filter applied",
       description: `Showing ${preset.label.toLowerCase()}`,
     });
   };
+
+  // Get visible filters based on complexity
+  const visibleFilters = currentPreset.filters === 'all' 
+    ? filterConfigs 
+    : filterConfigs.filter(f => (currentPreset.filters as string[]).includes(f.id));
 
   return (
     <div className="space-y-6">
@@ -460,23 +554,82 @@ export function TransactionsSection() {
             context="transactions"
             currentFilters={filters}
             currentColumns={selectedColumns}
+            currentComplexity={complexity}
             onLoadView={handleLoadView}
           />
-          <ColumnChooser
-            columns={allColumns}
-            selectedColumns={selectedColumns}
-            onSelectionChange={setSelectedColumns}
-          />
-          <Button variant="outline" size="sm" onClick={handleExport}>
-            <Download className="h-4 w-4 mr-2" />
-            Export
-          </Button>
+          {currentPreset.features.showColumnChooser && (
+            <ColumnChooser
+              columns={allColumns}
+              selectedColumns={selectedColumns}
+              onSelectionChange={setSelectedColumns}
+            />
+          )}
+          {currentPreset.features.showExport && (
+            <Button variant="outline" size="sm" onClick={handleExport}>
+              <Download className="h-4 w-4 mr-2" />
+              Export
+            </Button>
+          )}
           <Button variant="outline" size="sm" onClick={handleRefresh}>
             <RefreshCw className="h-4 w-4 mr-2" />
             Refresh
           </Button>
         </div>
       </div>
+
+      {/* View Complexity Toggle */}
+      <div className="flex items-center justify-between">
+        <ViewComplexityToggle
+          currentLevel={complexity}
+          onLevelChange={(level) => {
+            const old = complexity;
+            setComplexity(level);
+            trackViewChange(old, level, 'manual');
+            toast({
+              title: "View changed",
+              description: `Switched to ${VIEW_PRESETS[level].name}`,
+            });
+          }}
+        />
+        
+        {complexity === 'simple' && (
+          <div className="text-sm text-muted-foreground">
+            💡 Need more features? Switch to Standard or Advanced view
+          </div>
+        )}
+      </div>
+
+      {/* Recommendations Banner */}
+      {activeRecommendation && (
+        <ViewRecommendationBanner
+          recommendation={activeRecommendation}
+          onAccept={() => {
+            if (activeRecommendation.suggestedLevel) {
+              const old = complexity;
+              setComplexity(activeRecommendation.suggestedLevel);
+              trackViewChange(old, activeRecommendation.suggestedLevel, 'auto');
+            }
+            setActiveRecommendation(null);
+          }}
+          onDismiss={() => setActiveRecommendation(null)}
+        />
+      )}
+
+      {/* Upgrade Prompts */}
+      {complexity === 'simple' && selectedRows.size > 5 && !dismissedPrompts.includes('bulk-actions') && (
+        <UpgradeViewPrompt
+          currentLevel="simple"
+          targetLevel="standard"
+          reason="Bulk actions work better with more transaction details visible"
+          featureName="Enhanced Bulk Actions"
+          onUpgrade={() => {
+            const old = complexity;
+            setComplexity('standard');
+            trackViewChange(old, 'standard', 'auto');
+          }}
+          onDismiss={() => setDismissedPrompts(prev => [...prev, 'bulk-actions'])}
+        />
+      )}
 
       {/* Search & Filters */}
       <Card>
@@ -491,70 +644,97 @@ export function TransactionsSection() {
                 className="pl-10"
               />
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowAdvancedModal(true)}
-            >
-              <SlidersHorizontal className="h-4 w-4 mr-2" />
-              Advanced
-            </Button>
+            {currentPreset.features.showAdvancedFilters && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setShowAdvancedModal(true);
+                  trackFeatureUsage('advancedFilters');
+                }}
+              >
+                <SlidersHorizontal className="h-4 w-4 mr-2" />
+                Advanced
+              </Button>
+            )}
           </div>
 
           {/* Quick Presets */}
-          <div className="flex flex-wrap gap-2">
-            {quickPresets.map((preset) => (
-              <Button
-                key={preset.id}
-                variant="outline"
-                size="sm"
-                onClick={() => applyQuickPreset(preset)}
-                className="h-8"
-              >
-                <preset.icon className="h-3 w-3 mr-1" />
-                {preset.label}
-              </Button>
-            ))}
-          </div>
+          {currentPreset.features.showQuickPresets && (
+            <div className="flex flex-wrap gap-2">
+              {quickPresets.map((preset) => (
+                <Button
+                  key={preset.id}
+                  variant="outline"
+                  size="sm"
+                  onClick={() => applyQuickPreset(preset)}
+                  className="h-8"
+                >
+                  <preset.icon className="h-3 w-3 mr-1" />
+                  {preset.label}
+                </Button>
+              ))}
+            </div>
+          )}
 
           <FilterPanel
-            filters={filterConfigs}
+            filters={visibleFilters}
             values={filters}
             onValuesChange={setFilters}
+            availableFiltersCount={complexity === 'simple' ? filterConfigs.length : undefined}
           />
         </CardContent>
       </Card>
 
       {/* Bulk Actions Bar */}
-      <BulkActions
-        selectedCount={selectedRows.size}
-        onClearSelection={() => setSelectedRows(new Set())}
-        onExport={handleExport}
-        onRefund={handleBulkRefund}
-        onSendReceipt={() => {
-          toast({ title: "Receipts sent", description: `Sent ${selectedRows.size} receipts` });
-          setSelectedRows(new Set());
-        }}
-      />
+      {currentPreset.features.showBulkActions && (
+        <BulkActions
+          selectedCount={selectedRows.size}
+          onClearSelection={() => setSelectedRows(new Set())}
+          onExport={handleExport}
+          onRefund={handleBulkRefund}
+          onSendReceipt={() => {
+            toast({ title: "Receipts sent", description: `Sent ${selectedRows.size} receipts` });
+            setSelectedRows(new Set());
+          }}
+        />
+      )}
 
-      {/* Transactions Table */}
+      {/* Transactions Table or Mobile Cards */}
       <Card>
         <CardContent className="p-0">
-          <DataTable
-            data={paginatedTransactions}
-            columns={columns}
-            onRowClick={(row) => {
-              setSelectedTransaction(row);
-              setShowModal(true);
-            }}
-            emptyMessage="No transactions found"
-            pagination={{
-              page,
-              pageSize,
-              total: filteredTransactions.length,
-              onPageChange: setPage,
-            }}
-          />
+          {screenSize === 'mobile' ? (
+            <div className="space-y-2 p-4">
+              {paginatedTransactions.map(transaction => (
+                <MobileTransactionCard
+                  key={transaction.id}
+                  transaction={transaction}
+                  onClick={() => {
+                    setSelectedTransaction(transaction);
+                    setShowModal(true);
+                  }}
+                />
+              ))}
+            </div>
+          ) : (
+            <DataTable
+              data={paginatedTransactions}
+              columns={columns}
+              onRowClick={(row) => {
+                setSelectedTransaction(row);
+                setShowModal(true);
+              }}
+              emptyMessage="No transactions found"
+              pagination={{
+                page,
+                pageSize,
+                total: filteredTransactions.length,
+                onPageChange: setPage,
+              }}
+              responsiveColumns={RESPONSIVE_COLUMNS[complexity]}
+              complexity={complexity}
+            />
+          )}
         </CardContent>
       </Card>
 
@@ -568,12 +748,21 @@ export function TransactionsSection() {
       )}
 
       {/* Advanced Filter Modal */}
-      <AdvancedFilterModal
-        open={showAdvancedModal}
-        onOpenChange={setShowAdvancedModal}
-        filters={filters}
-        onApply={setFilters}
-        onReset={() => setFilters({})}
+      {currentPreset.features.showAdvancedFilters && (
+        <AdvancedFilterModal
+          open={showAdvancedModal}
+          onOpenChange={setShowAdvancedModal}
+          filters={filters}
+          onApply={setFilters}
+          onReset={() => setFilters({})}
+        />
+      )}
+
+      {/* View Selection Wizard */}
+      <ViewSelectionWizard
+        open={showWizard}
+        onSelect={handleWizardSelect}
+        suggestedLevel={detectUserProfile(getUsageMetrics()).suggestedView}
       />
     </div>
   );

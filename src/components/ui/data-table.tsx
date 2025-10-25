@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import {
   Table,
   TableBody,
@@ -8,12 +9,20 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ViewComplexity } from "@/types/view-complexity";
+import { useScreenSize } from "@/lib/responsive-columns";
 
 interface Column<T> {
   key: string;
   header: string;
   cell: (row: T) => React.ReactNode;
   sortable?: boolean;
+}
+
+interface ResponsiveColumnConfig {
+  mobile: string[];
+  tablet: string[];
+  desktop: string[];
 }
 
 interface DataTableProps<T> {
@@ -28,6 +37,8 @@ interface DataTableProps<T> {
     total: number;
     onPageChange: (page: number) => void;
   };
+  responsiveColumns?: ResponsiveColumnConfig;
+  complexity?: ViewComplexity;
 }
 
 export function DataTable<T extends { id: string | number }>({
@@ -37,7 +48,21 @@ export function DataTable<T extends { id: string | number }>({
   loading = false,
   emptyMessage = "No data available",
   pagination,
+  responsiveColumns,
+  complexity,
 }: DataTableProps<T>) {
+  const screenSize = useScreenSize();
+  
+  // Filter columns based on screen size if responsive config provided
+  const visibleColumns = useMemo(() => {
+    if (!responsiveColumns || screenSize === 'desktop') {
+      return columns;
+    }
+    
+    const allowedKeys = responsiveColumns[screenSize];
+    return columns.filter(col => allowedKeys.includes(col.key));
+  }, [columns, responsiveColumns, screenSize]);
+
   if (loading) {
     return (
       <div className="space-y-3">
@@ -54,7 +79,7 @@ export function DataTable<T extends { id: string | number }>({
         <Table>
           <TableHeader>
             <TableRow>
-              {columns.map((column) => (
+              {visibleColumns.map((column) => (
                 <TableHead key={column.key}>{column.header}</TableHead>
               ))}
             </TableRow>
@@ -63,7 +88,7 @@ export function DataTable<T extends { id: string | number }>({
             {data.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={columns.length}
+                  colSpan={visibleColumns.length}
                   className="h-24 text-center text-muted-foreground"
                 >
                   {emptyMessage}
@@ -76,7 +101,7 @@ export function DataTable<T extends { id: string | number }>({
                   onClick={() => onRowClick?.(row)}
                   className={onRowClick ? "cursor-pointer hover:bg-muted/50" : ""}
                 >
-                  {columns.map((column) => (
+                  {visibleColumns.map((column) => (
                     <TableCell key={column.key}>
                       {column.cell(row)}
                     </TableCell>

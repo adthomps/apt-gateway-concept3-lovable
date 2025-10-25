@@ -7,6 +7,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { ViewComplexity } from "@/types/view-complexity";
 import {
   Dialog,
   DialogContent,
@@ -27,6 +28,7 @@ interface ViewsManagerProps {
   context: string;
   currentFilters: Record<string, any>;
   currentColumns: string[];
+  currentComplexity: ViewComplexity;
   onLoadView: (view: SavedView) => void;
 }
 
@@ -34,6 +36,7 @@ export function ViewsManager({
   context,
   currentFilters,
   currentColumns,
+  currentComplexity,
   onLoadView,
 }: ViewsManagerProps) {
   const [views, setViews] = useState<SavedView[]>(() => {
@@ -60,6 +63,7 @@ export function ViewsManager({
       name: viewName,
       filters: currentFilters,
       columns: currentColumns,
+      complexity: currentComplexity,
       isDefault: false,
       isPinned: false,
     });
@@ -127,8 +131,12 @@ export function ViewsManager({
                   onClick={() => onLoadView(view)}
                 >
                   <div className="flex items-center gap-2">
+                    {view.icon && <span className="text-base">{view.icon}</span>}
                     <Pin className="h-3 w-3" />
                     <span>{view.name}</span>
+                    <Badge variant="outline" className="text-xs">
+                      {view.complexity}
+                    </Badge>
                     {view.isDefault && (
                       <Star className="h-3 w-3 fill-primary text-primary" />
                     )}
@@ -171,7 +179,11 @@ export function ViewsManager({
                 onClick={() => onLoadView(view)}
               >
                 <div className="flex items-center gap-2">
+                  {view.icon && <span className="text-base">{view.icon}</span>}
                   <span>{view.name}</span>
+                  <Badge variant="outline" className="text-xs">
+                    {view.complexity}
+                  </Badge>
                   {view.isDefault && (
                     <Star className="h-3 w-3 fill-primary text-primary" />
                   )}

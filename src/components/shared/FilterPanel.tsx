@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Info } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -33,9 +34,15 @@ interface FilterPanelProps {
   filters: FilterConfig[];
   values: Record<string, any>;
   onValuesChange: (values: Record<string, any>) => void;
+  availableFiltersCount?: number;
 }
 
-export function FilterPanel({ filters, values, onValuesChange }: FilterPanelProps) {
+export function FilterPanel({ 
+  filters, 
+  values, 
+  onValuesChange,
+  availableFiltersCount 
+}: FilterPanelProps) {
   const [isOpen, setIsOpen] = useState(false);
 
   const activeFilterCount = Object.values(values).filter(v => {
@@ -183,6 +190,13 @@ export function FilterPanel({ filters, values, onValuesChange }: FilterPanelProp
               </div>
             ))}
           </div>
+
+          {availableFiltersCount && filters.length < availableFiltersCount && (
+            <div className="text-xs text-muted-foreground flex items-center gap-2 mt-4 p-2 bg-muted/30 rounded">
+              <Info className="h-3 w-3" />
+              <span>{availableFiltersCount - filters.length} more filters available in Standard/Advanced view</span>
+            </div>
+          )}
         </CollapsibleContent>
       </Collapsible>
 

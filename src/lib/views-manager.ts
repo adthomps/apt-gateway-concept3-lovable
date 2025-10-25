@@ -1,3 +1,5 @@
+import { ViewComplexity, VIEW_PRESETS } from "@/types/view-complexity";
+
 export interface SavedView {
   id: string;
   name: string;
@@ -7,7 +9,53 @@ export interface SavedView {
   isDefault: boolean;
   isPinned: boolean;
   createdAt: Date;
+  complexity: ViewComplexity;
+  description?: string;
+  icon?: string;
 }
+
+export const VIEW_TEMPLATES: Omit<SavedView, 'id' | 'createdAt'>[] = [
+  {
+    name: "Quick Review",
+    description: "Fast overview of recent transactions",
+    complexity: 'simple',
+    filters: { dateRange: { from: new Date(Date.now() - 24*60*60*1000), to: new Date() } },
+    columns: ['select', 'time', 'customer', 'amount', 'status'],
+    isDefault: false,
+    isPinned: true,
+    icon: "⚡",
+  },
+  {
+    name: "Daily Operations",
+    description: "Balanced view for routine work",
+    complexity: 'standard',
+    filters: { dateRange: { from: new Date(Date.now() - 7*24*60*60*1000), to: new Date() } },
+    columns: VIEW_PRESETS.standard.columns,
+    isDefault: false,
+    isPinned: true,
+    icon: "📊",
+  },
+  {
+    name: "Fraud Investigation",
+    description: "High-risk transactions requiring review",
+    complexity: 'advanced',
+    filters: { minRisk: 50, status: ['failed', 'disputed'] },
+    columns: VIEW_PRESETS.advanced.columns,
+    isDefault: false,
+    isPinned: false,
+    icon: "🔍",
+  },
+  {
+    name: "High Value Transactions",
+    description: "Transactions over $1000",
+    complexity: 'standard',
+    filters: { minAmount: 1000 },
+    columns: VIEW_PRESETS.standard.columns,
+    isDefault: false,
+    isPinned: false,
+    icon: "💰",
+  },
+];
 
 const STORAGE_KEY_PREFIX = 'saved_views_';
 
@@ -39,6 +87,12 @@ export class ViewsManager {
 
   saveView(view: Omit<SavedView, 'id' | 'createdAt'>): SavedView {
     const views = this.getViews();
+    
+    // Validate complexity
+    if (!view.complexity) {
+      throw new Error('View complexity is required');
+    }
+    
     const newView: SavedView = {
       ...view,
       id: `view_${Date.now()}`,
@@ -53,6 +107,10 @@ export class ViewsManager {
     views.push(newView);
     localStorage.setItem(this.getStorageKey(), JSON.stringify(views));
     return newView;
+  }
+
+  getViewsByComplexity(complexity: ViewComplexity): SavedView[] {
+    return this.getViews().filter(v => v.complexity === complexity);
   }
 
   updateView(id: string, updates: Partial<SavedView>): void {
